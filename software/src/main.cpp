@@ -142,8 +142,6 @@ static void update_time_display() {
 }
 
 void setup() {
-    pinMode(PIN_SHDN, OUTPUT);
-    digitalWrite(PIN_SHDN, HIGH);
     setup_pins(anode_pins, digit_count);
     setup_pins(cathode_pins, 10);
 
@@ -151,6 +149,9 @@ void setup() {
     Wire.begin(PIN_SDA, PIN_SCL);
 
     init_rtc();
+
+    pinMode(PIN_SHDN, OUTPUT);
+    digitalWrite(PIN_SHDN, HIGH);
 }
 
 void loop() {
