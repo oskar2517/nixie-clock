@@ -6,6 +6,8 @@
 #define PIN_SDA 1
 #define PIN_SCL 2
 #define PIN_SHDN 15
+#define PIN_NEON_1 9
+#define PIN_NEON_2 8
 
 #define SCAN_TICK_US 100
 #define ANODE_ON_TICKS (1000 / SCAN_TICK_US)
@@ -106,10 +108,14 @@ static uint32_t time_display_value(const DateTime& now) {
     return (now.hour() * 10000UL) + (now.minute() * 100UL) + now.second();
 }
 
+static void setup_pin(uint8_t pin) {
+    pinMode(pin, OUTPUT);
+    digitalWrite(pin, LOW);
+}
+
 static void setup_pins(const uint8_t* pins, uint8_t count) {
     for (uint8_t i = 0; i < count; i++) {
-        pinMode(pins[i], OUTPUT);
-        digitalWrite(pins[i], LOW);
+        setup_pin(pins[i]);
     }
 }
 
@@ -132,16 +138,26 @@ static void init_rtc() {
 
 static void update_time_display() {
     static uint32_t last_read_ms = 0;
+    static uint32_t last_neon_blink_ms = 0;
+    static bool neon_enabled = false;
 
-    if (!rtc_available || millis() - last_read_ms < 100) {
-        return;
+    if (!rtc_available || millis() - last_read_ms >= 100) {
+        last_read_ms = millis();
+        set_display(time_display_value(rtc.now()));
     }
 
-    last_read_ms = millis();
-    set_display(time_display_value(rtc.now()));
+    if (millis() - last_neon_blink_ms >= 500) {
+        last_neon_blink_ms = millis();
+        digitalWrite(PIN_NEON_1, neon_enabled);
+        digitalWrite(PIN_NEON_2, neon_enabled);
+
+        neon_enabled = !neon_enabled;
+    }
 }
 
 void setup() {
+    setup_pin(PIN_NEON_1);
+    setup_pin(PIN_NEON_2);
     setup_pins(anode_pins, digit_count);
     setup_pins(cathode_pins, 10);
 
@@ -150,10 +166,9 @@ void setup() {
 
     init_rtc();
 
+    delay(1000);
     pinMode(PIN_SHDN, OUTPUT);
     digitalWrite(PIN_SHDN, HIGH);
 }
 
-void loop() {
-    update_time_display();
-}
+void loop() { update_time_display(); }
