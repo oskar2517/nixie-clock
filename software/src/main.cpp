@@ -136,9 +136,19 @@ static void init_rtc() {
     set_display(time_display_value(rtc.now()));
 }
 
+static void anti_cathode_poisoning_routine() {
+    for (uint8_t i = 0; i < 10; i++) {
+        uint32_t n = i * 111111;
+
+        set_display(n);
+        delay(100);
+    }
+}
+
 static void update_time_display() {
     static uint32_t last_read_ms = 0;
     static uint32_t last_neon_blink_ms = 0;
+    static uint32_t last_anti_cathode_poisoning_ms = 0;
     static bool neon_enabled = false;
 
     if (!rtc_available || millis() - last_read_ms >= 100) {
@@ -152,6 +162,12 @@ static void update_time_display() {
         digitalWrite(PIN_NEON_2, neon_enabled);
 
         neon_enabled = !neon_enabled;
+    }
+
+    if (millis() - last_anti_cathode_poisoning_ms >= 60000) {
+        last_anti_cathode_poisoning_ms = millis();
+
+        anti_cathode_poisoning_routine();
     }
 }
 
