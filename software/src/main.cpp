@@ -14,6 +14,15 @@
 #define CATHODE_OFF_DELAY_TICKS (400 / SCAN_TICK_US)
 #define BLANK_TICKS (400 / SCAN_TICK_US)
 
+#define NEON_PWM_FREQ_HZ 1000
+#define NEON_PWM_RESOLUTION_BITS 10
+#define NEON_PWM_MAX_DUTY ((1 << NEON_PWM_RESOLUTION_BITS) - 1)
+#define NEON_PWM_CHANNEL_1 0
+#define NEON_PWM_CHANNEL_2 1
+#define NEON_BRIGHTNESS_PERCENT 50
+#define RTC_READ_INTERVAL_MS 50
+#define NEON_HALF_PERIOD_MS 500
+
 static const uint8_t anode_pins[] = {21, 14, 13, 12, 11, 10};
 static const uint8_t cathode_pins[] = {47, 48, 35, 36, 37, 38, 39, 40, 41, 42};
 static const uint8_t digit_count = sizeof(anode_pins) / sizeof(anode_pins[0]);
@@ -108,6 +117,36 @@ static uint32_t time_display_value(const DateTime& now) {
     return (now.hour() * 10000UL) + (now.minute() * 100UL) + now.second();
 }
 
+static uint32_t neon_duty_from_percent(uint8_t percent) {
+    if (percent > 100) {
+        percent = 100;
+    }
+
+    return (NEON_PWM_MAX_DUTY * percent) / 100;
+}
+
+static void set_neons_enabled(bool enabled) {
+    uint32_t duty =
+        enabled ? neon_duty_from_percent(NEON_BRIGHTNESS_PERCENT) : 0;
+
+    ledcWrite(NEON_PWM_CHANNEL_1, duty);
+    ledcWrite(NEON_PWM_CHANNEL_2, duty);
+}
+
+static void sync_neons_to_second_phase(uint32_t second_started_ms) {
+    uint32_t elapsed_ms = millis() - second_started_ms;
+
+    set_neons_enabled(elapsed_ms < NEON_HALF_PERIOD_MS);
+}
+
+static void setup_neon_pwm() {
+    ledcSetup(NEON_PWM_CHANNEL_1, NEON_PWM_FREQ_HZ, NEON_PWM_RESOLUTION_BITS);
+    ledcSetup(NEON_PWM_CHANNEL_2, NEON_PWM_FREQ_HZ, NEON_PWM_RESOLUTION_BITS);
+    ledcAttachPin(PIN_NEON_1, NEON_PWM_CHANNEL_1);
+    ledcAttachPin(PIN_NEON_2, NEON_PWM_CHANNEL_2);
+    set_neons_enabled(false);
+}
+
 static void setup_pin(uint8_t pin) {
     pinMode(pin, OUTPUT);
     digitalWrite(pin, LOW);
@@ -133,7 +172,9 @@ static void init_rtc() {
         rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
     }
 
-    set_display(time_display_value(rtc.now()));
+    DateTime now = rtc.now();
+    set_display(time_display_value(now));
+    sync_neons_to_second_phase(millis());
 }
 
 static void anti_cathode_poisoning_routine() {
@@ -147,35 +188,35 @@ static void anti_cathode_poisoning_routine() {
 
 static void update_time_display() {
     static uint32_t last_read_ms = 0;
-    static uint32_t last_neon_blink_ms = 0;
     static uint32_t last_anti_cathode_poisoning_ms = 0;
-    static bool neon_enabled = false;
+    static uint8_t last_second = UINT8_MAX;
+    static uint32_t second_started_ms = 0;
+    uint32_t now_ms = millis();
 
-    if (!rtc_available || millis() - last_read_ms >= 100) {
-        last_read_ms = millis();
-        set_display(time_display_value(rtc.now()));
+    if (rtc_available && now_ms - last_read_ms >= RTC_READ_INTERVAL_MS) {
+        last_read_ms = now_ms;
+
+        DateTime now = rtc.now();
+        if (now.second() != last_second) {
+            last_second = now.second();
+            second_started_ms = now_ms;
+            set_display(time_display_value(now));
+        }
+
+        sync_neons_to_second_phase(second_started_ms);
     }
 
-    if (millis() - last_neon_blink_ms >= 500) {
-        last_neon_blink_ms = millis();
-        digitalWrite(PIN_NEON_1, neon_enabled);
-        digitalWrite(PIN_NEON_2, neon_enabled);
-
-        neon_enabled = !neon_enabled;
-    }
-
-    if (millis() - last_anti_cathode_poisoning_ms >= 60000) {
-        last_anti_cathode_poisoning_ms = millis();
+    if (now_ms - last_anti_cathode_poisoning_ms >= 60000) {
+        last_anti_cathode_poisoning_ms = now_ms;
 
         anti_cathode_poisoning_routine();
     }
 }
 
 void setup() {
-    setup_pin(PIN_NEON_1);
-    setup_pin(PIN_NEON_2);
     setup_pins(anode_pins, digit_count);
     setup_pins(cathode_pins, 10);
+    setup_neon_pwm();
 
     Serial.begin(9600);
     Wire.begin(PIN_SDA, PIN_SCL);
