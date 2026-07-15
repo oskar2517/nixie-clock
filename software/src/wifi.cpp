@@ -2,7 +2,7 @@
 
 #include <WiFi.h>
 
-void wifi_setup() {
+void wifi_ap_setup() {
     Serial.print("Setting Access Point...");
 
     WiFi.mode(WIFI_AP);

@@ -17,7 +17,7 @@ void setup() {
     Wire.begin(PIN_SDA, PIN_SCL);
 
     clock_setup();
-    wifi_setup();
+    wifi_ap_setup();
     webserver_setup();
 
     delay(1000);

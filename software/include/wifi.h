@@ -3,4 +3,4 @@
 #define WIFI_SSID "Nixie Clock"
 #define WIFI_PASSWORD "123456pass"
 
-void wifi_setup();
+void wifi_ap_setup();
