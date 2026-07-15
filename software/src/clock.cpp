@@ -161,17 +161,18 @@ static void init_rtc() {
 }
 
 static void anti_cathode_poisoning_routine() {
-    for (uint8_t i = 0; i < 10; i++) {
-        uint32_t n = i * 111111;
+    for (uint8_t i = 0; i < 2; i++) {
+        for (uint8_t j = 0; j < 10; j++) {
+            uint32_t n = j * 111111;
 
-        set_display(n);
-        delay(100);
+            set_display(n);
+            delay(100);
+        }
     }
 }
 
 void clock_update() {
     static uint32_t last_read_ms = 0;
-    static uint32_t last_anti_cathode_poisoning_ms = 0;
     static uint8_t last_second = UINT8_MAX;
     static uint32_t second_started_ms = 0;
     uint32_t now_ms = millis();
@@ -180,19 +181,19 @@ void clock_update() {
         last_read_ms = now_ms;
 
         DateTime now = rtc.now();
-        if (now.second() != last_second) {
+        uint8_t now_s = now.second();
+
+        if (now_s != last_second) {
             last_second = now.second();
             second_started_ms = now_ms;
             set_display(time_display_value(now));
         }
 
+        if (now_s == 0) {
+            anti_cathode_poisoning_routine();
+        }
+
         sync_neons_to_second_phase(second_started_ms);
-    }
-
-    if (now_ms - last_anti_cathode_poisoning_ms >= 60000) {
-        last_anti_cathode_poisoning_ms = now_ms;
-
-        anti_cathode_poisoning_routine();
     }
 }
 
