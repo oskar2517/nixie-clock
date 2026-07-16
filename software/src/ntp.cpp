@@ -6,8 +6,8 @@
 #define NTP_SERVER "pool.ntp.org"
 #define TIMEZONE "CET-1CEST,M3.5.0/2,M10.5.0/3"
 
-void ntp_fetch_time() {
-    if (!wifi_connect_with_config_credentials()) return;
+bool ntp_fetch_time() {
+    if (!wifi_connect_with_config_credentials()) return false;
 
     Serial.print("Fetching time from NTP server ");
     Serial.println(NTP_SERVER);
@@ -17,7 +17,7 @@ void ntp_fetch_time() {
     struct tm timeinfo;
     if (!getLocalTime(&timeinfo)) {
         Serial.println("Failed to local obtain time.");
-        return;
+        return false;
     }
 
     int year = timeinfo.tm_year + 1900;
@@ -32,4 +32,6 @@ void ntp_fetch_time() {
     Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
 
     wifi_disconnect();
+
+    return true;
 }

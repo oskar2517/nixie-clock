@@ -1,3 +1,3 @@
 #pragma conce
 
-void ntp_fetch_time();
+bool ntp_fetch_time();
