@@ -18,6 +18,7 @@ bool wifi_connect(const char* ssid, const char* password) {
     Serial.print("Connecting to WIFI with SSID ");
     Serial.print(ssid);
 
+    WiFi.mode(WIFI_AP_STA);
     WiFi.begin(ssid, password);
 
     uint8_t attempt = 0;
@@ -40,7 +41,7 @@ bool wifi_connect(const char* ssid, const char* password) {
 
 void wifi_disconnect() {
     WiFi.disconnect(true);
-    WiFi.mode(WIFI_OFF);
+    WiFi.mode(WIFI_AP);
     Serial.println("WiFi disconnected.");
 }
 
@@ -53,7 +54,7 @@ void wifi_ap_setup() {
         return;
     }
 
-    Serial.println("Scuessfully set up access point");
+    Serial.println("Sucessfully set up access point");
 
     IPAddress ip = WiFi.softAPIP();
     Serial.print("AP IP address: ");
