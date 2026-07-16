@@ -61,6 +61,8 @@ static void handle_wifi_setup(JsonDocument& request) {
         return;
     }
 
+    wifi_disconnect();
+
     config["wifi_ssid"] = ssid;
     config["wifi_password"] = password;
     config_save();
