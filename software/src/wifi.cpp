@@ -2,11 +2,43 @@
 
 #include <WiFi.h>
 
+bool wifi_connect(const char* ssid, const char* password) {
+    Serial.print("Connecting to WIFI with SSID ");
+    Serial.print(ssid);
+    Serial.print(" and password ");
+    Serial.print(password);
+
+    WiFi.begin(ssid, password);
+
+    uint8_t attempt = 0;
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(500);
+        Serial.print(".");
+        attempt++;
+        if (attempt > 10) {
+            Serial.println("");
+            Serial.println("Failed to connect to WIFI.");
+            return false;
+        }
+    }
+    Serial.println("");
+
+    Serial.println("WiFi connected.");
+
+    return true;
+}
+
+void wifi_disconnect() {
+    WiFi.disconnect(true);
+    WiFi.mode(WIFI_OFF);
+    Serial.println("WIFI disconnected.");
+}
+
 void wifi_ap_setup() {
     Serial.print("Setting Access Point...");
 
     WiFi.mode(WIFI_AP);
-    if (!WiFi.softAP(WIFI_SSID, WIFI_PASSWORD)) {
+    if (!WiFi.softAP(WIFI_AP_SSID, WIFI_AP_PASSWORD)) {
         Serial.println(" failed");
         return;
     }

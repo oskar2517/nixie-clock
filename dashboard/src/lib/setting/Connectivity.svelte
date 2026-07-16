@@ -2,15 +2,45 @@
     import Button from "./settings/Button.svelte";
     import SettingGroup from "./settings/SettingGroup.svelte";
     import TextInputSetting from "./settings/TextInputSetting.svelte";
+    import { setupWifi as setupWifiApi } from "../../api";
+
+    let ssid = $state("");
+    let password = $state("");
+
+    let error = $state("");
+    let setupSsid = $state("");
+
+    async function setupWifi() {
+        try {
+            const response = await setupWifiApi(ssid, password);
+            setupSsid = response.ssid;
+            error = "";
+        } catch (err: any) {
+            error = err.toString();
+        }
+    }
+
+    function forgetWifi() {}
 </script>
 
 <SettingGroup title="Connectivity">
-    <TextInputSetting
-        name="SSID"
-        description="This has to be the exact name of the WiFi network you want to connect to."
-        value=""
-    ></TextInputSetting>
-    <TextInputSetting name="Password" value="" type="password"
-    ></TextInputSetting>
-    <Button name="Connect"></Button>
+    {#if setupSsid !== ""}
+        <span>Setup for WiFi {setupSsid}</span>
+        <Button name="Forget WiFi" onclick={forgetWifi}></Button>
+    {:else}
+        <TextInputSetting
+            name="SSID"
+            description="This has to be the exact name of the WiFi network you want to connect to."
+            bind:value={ssid}
+        ></TextInputSetting>
+
+        <TextInputSetting name="Password" type="password" bind:value={password}
+        ></TextInputSetting>
+
+        <Button name="Setup WiFi" onclick={setupWifi}></Button>
+    {/if}
+
+    {#if error !== ""}
+        <span class="error">{error}</span>
+    {/if}
 </SettingGroup>
