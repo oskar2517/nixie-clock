@@ -30,6 +30,8 @@
             wifiStatus = await setupWifiApi(ssid, password);
             connecting = false;
             error = "";
+            ssid = "";
+            password = "";
         } catch (err: any) {
             connecting = false;
             error = err.toString();
@@ -41,6 +43,8 @@
             await forgetWifiApi();
             wifiStatus = null;
             error = "";
+            ssid = "";
+            password = "";
         } catch (err: any) {
             error = err;
         }
