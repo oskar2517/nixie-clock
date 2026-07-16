@@ -34,7 +34,6 @@
         all: unset;
         box-sizing: border-box;
         padding: 10px;
-        font-weight: 700;
         width: 100%;
         background-image: url("../../../assets/icon/expand.svg");
         background-repeat: no-repeat;

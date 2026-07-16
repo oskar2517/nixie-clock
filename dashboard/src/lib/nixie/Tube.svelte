@@ -57,7 +57,6 @@
     .letter {
         line-height: 70px;
         font-size: 65px;
-        font-weight: 300;
         text-align: center;
         transition:
             ease-out color 0.5s,
