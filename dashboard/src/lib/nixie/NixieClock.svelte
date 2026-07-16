@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { onMount } from "svelte";
     import Tube from "./Tube.svelte";
 
     let digits: number[] = $state([]);
@@ -11,14 +12,18 @@
         return [Math.floor(p / 10), p % 10];
     }
 
-    setInterval(() => {
-        const date = new Date();
+    function updateTime() {
+                const date = new Date();
         const hours = convertTimePart(date.getHours());
         const minutes = convertTimePart(date.getMinutes());
         const seconds = convertTimePart(date.getSeconds());
 
         digits = [...hours, ...minutes, ...seconds];
-    }, 500);
+    }
+
+    setInterval(updateTime, 500);
+
+    onMount(updateTime);
 </script>
 
 <div class="display">
