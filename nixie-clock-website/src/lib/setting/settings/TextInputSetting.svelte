@@ -1,14 +1,18 @@
 <script lang="ts">
+    import Setting from "./Setting.svelte";
+
     interface Props {
         name: string;
+        description?: string;
         value: string;
         type?: "text" | "password";
-                disabled?: boolean;
+        disabled?: boolean;
         onchange?: () => void;
     }
 
     let {
         name,
+        description,
         value = $bindable(),
         type = "text",
         disabled = false,
@@ -16,22 +20,12 @@
     }: Props = $props();
 </script>
 
-<div class="text-input-setting" class:disabled>
-    <div class="name">{name}</div>
-    <input class="input" {type} placeholder={name} bind:value {onchange} />
-</div>
+<Setting {name} {description} {disabled}>
+    <input class="text-input-setting" {type} placeholder={name} bind:value {onchange} />
+</Setting>
 
 <style>
-    .text-input-setting.disabled {
-        pointer-events: none;
-        opacity: .5;
-    }
-
-    .name {
-        margin-bottom: 2px;
-    }
-
-    .input {
+    .text-input-setting {
         all: unset;
         width: 100%;
         background-color: #313131;

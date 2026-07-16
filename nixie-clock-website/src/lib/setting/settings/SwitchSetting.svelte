@@ -1,46 +1,45 @@
 <script lang="ts">
+    import Setting from "./Setting.svelte";
+
     interface Props {
         name: string;
-        state: boolean;
+        description?: string;
+        value: boolean;
         disabled?: boolean;
         onchange?: () => void;
     }
 
     let {
         name,
-        state = $bindable(),
-        disabled = false,
+        description,
+        value = $bindable(),
+        disabled,
         onchange,
     }: Props = $props();
 
     function handleToggle() {
-        state = !state;
+        value = !value;
 
         onchange?.();
     }
 </script>
 
-<!-- svelte-ignore a11y_click_events_have_key_events -->
-<!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="switch-setting" class:disabled onclick={handleToggle}>
-    <div class="switch">
-        <div class="state" class:active={state}>On</div>
-        <div class="state" class:active={!state}>Off</div>
+<Setting {name} {description} {disabled}>
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div class="switch-setting" onclick={handleToggle}>
+        <div class="switch">
+            <div class="state" class:active={value}>On</div>
+            <div class="state" class:active={!value}>Off</div>
+        </div>
     </div>
-
-    <div class="name">{name}</div>
-</div>
+</Setting>
 
 <style>
     .switch-setting {
         display: flex;
         column-gap: 10px;
         align-items: center;
-    }
-
-    .switch-setting.disabled {
-        pointer-events: none;
-        opacity: 0.5;
     }
 
     .switch {

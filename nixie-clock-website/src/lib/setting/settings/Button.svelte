@@ -17,6 +17,7 @@
         border-radius: 5px;
         padding: 5px 10px;
         text-align: center;
+        color: white;
     }
 
     button:hover {
