@@ -1,11 +1,23 @@
 #include "wifi.h"
+#include "config.h"
 
 #include <WiFi.h>
+
+bool wifi_connect_with_config_credentials() {
+    const char* ssid = config["wifi_ssid"];
+    const char* password = config["wifi_password"];
+
+    if (!ssid | !password) {
+        return false;
+    }
+
+    return wifi_connect(ssid, password);
+}
 
 bool wifi_connect(const char* ssid, const char* password) {
     Serial.print("Connecting to WIFI with SSID ");
     Serial.print(ssid);
-    
+
     WiFi.begin(ssid, password);
 
     uint8_t attempt = 0;

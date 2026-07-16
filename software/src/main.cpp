@@ -4,6 +4,7 @@
 #include "clock.h"
 #include "config.h"
 #include "filesystem.h"
+#include "ntp.h"
 #include "pins.h"
 #include "webserver.h"
 #include "wifi.h"
@@ -21,6 +22,7 @@ void setup() {
     filesystem_setup();
     config_load();
     clock_setup();
+    ntp_fetch_time();
     wifi_ap_setup();
     webserver_setup();
 
