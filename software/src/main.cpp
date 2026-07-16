@@ -2,6 +2,8 @@
 #include <Wire.h>
 
 #include "clock.h"
+#include "config.h"
+#include "filesystem.h"
 #include "pins.h"
 #include "webserver.h"
 #include "wifi.h"
@@ -16,6 +18,8 @@ void setup() {
 
     Wire.begin(PIN_SDA, PIN_SCL);
 
+    filesystem_setup();
+    config_load();
     clock_setup();
     wifi_ap_setup();
     webserver_setup();

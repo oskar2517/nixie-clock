@@ -5,9 +5,7 @@
 bool wifi_connect(const char* ssid, const char* password) {
     Serial.print("Connecting to WIFI with SSID ");
     Serial.print(ssid);
-    Serial.print(" and password ");
-    Serial.print(password);
-
+    
     WiFi.begin(ssid, password);
 
     uint8_t attempt = 0;

@@ -2,13 +2,25 @@
     import Button from "./settings/Button.svelte";
     import SettingGroup from "./settings/SettingGroup.svelte";
     import TextInputSetting from "./settings/TextInputSetting.svelte";
-    import { setupWifi as setupWifiApi } from "../../api";
+    import {
+        getWifiStatus,
+        setupWifi as setupWifiApi,
+        forgetWifi as forgetWifiApi,
+    } from "../../api";
+    import { onMount } from "svelte";
 
     let ssid = $state("");
     let password = $state("");
 
     let error = $state("");
     let setupSsid = $state("");
+
+    onMount(async () => {
+        try {
+            const status = await getWifiStatus();
+            setupSsid = status.ssid;
+        } catch (err) {}
+    });
 
     async function setupWifi() {
         try {
@@ -20,7 +32,15 @@
         }
     }
 
-    function forgetWifi() {}
+    async function forgetWifi() {
+        try {
+            await forgetWifiApi();
+            setupSsid = "";
+            error = "";
+        } catch (err: any) {
+            error = err;
+        }
+    }
 </script>
 
 <SettingGroup title="Connectivity">

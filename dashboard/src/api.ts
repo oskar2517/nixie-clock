@@ -2,14 +2,23 @@ interface WiFiResponse {
     ssid: string;
 }
 
-function createRequest(method: "POST" | "GET", route: string, body: string): Promise<Response> {
-    return fetch(route, {
-        method,
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body
-    });
+function createRequest(method: "POST" | "GET" | "DELETE", route: string, body?: string): Promise<Response> {
+    if (body) {
+        return fetch(route, {
+            method,
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body
+        });
+    } else {
+        return fetch(route, {
+            method,
+            headers: {
+                "Content-Type": "application/json"
+            }
+        });
+    }
 }
 
 export async function setupWifi(ssid: string, password: string): Promise<WiFiResponse> {
@@ -23,4 +32,18 @@ export async function setupWifi(ssid: string, password: string): Promise<WiFiRes
     }
 
     return await response.json();
+}
+
+export async function getWifiStatus(): Promise<WiFiResponse> {
+    const response = await createRequest("GET", "/api/wifi");
+
+    if (!response.ok) {
+        throw new Error("WiFi not setup");
+    }
+
+    return await response.json();
+}
+
+export async function forgetWifi(): Promise<void> {
+    await createRequest("DELETE", "/api/wifi");
 }
