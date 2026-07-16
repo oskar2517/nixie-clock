@@ -1,6 +1,7 @@
 #include <ArduinoJson.h>
 #include <LittleFS.h>
 #include <WebServer.h>
+#include <WiFi.h>
 
 #include <functional>
 
@@ -11,6 +12,29 @@
 #define BASE_PATH "/dashboard/"
 
 static WebServer server(80);
+
+static bool request_from_access_point() {
+    return server.client().localIP() == WiFi.softAPIP();
+}
+
+class AccessPointOnlyHandler : public RequestHandler {
+   public:
+    bool canHandle(HTTPMethod requestMethod, String requestUri) override {
+        (void)requestMethod;
+        (void)requestUri;
+
+        return !request_from_access_point();
+    }
+
+    bool handle(WebServer& server, HTTPMethod requestMethod,
+                String requestUri) override {
+        (void)requestMethod;
+        (void)requestUri;
+
+        server.send(403);
+        return true;
+    }
+};
 
 enum class RequestBody : uint8_t {
     None,
@@ -101,6 +125,8 @@ static void setup_api() {
 }
 
 void webserver_setup() {
+    server.addHandler(new AccessPointOnlyHandler());
+
     setup_api();
 
     if (filesystem_available) {

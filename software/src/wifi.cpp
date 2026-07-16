@@ -41,19 +41,19 @@ bool wifi_connect(const char* ssid, const char* password) {
 void wifi_disconnect() {
     WiFi.disconnect(true);
     WiFi.mode(WIFI_OFF);
-    Serial.println("WIFI disconnected.");
+    Serial.println("WiFi disconnected.");
 }
 
 void wifi_ap_setup() {
-    Serial.print("Setting Access Point...");
+    Serial.println("Setting access point...");
 
     WiFi.mode(WIFI_AP);
     if (!WiFi.softAP(WIFI_AP_SSID, WIFI_AP_PASSWORD)) {
-        Serial.println(" failed");
+        Serial.println("Failed to setup access point");
         return;
     }
 
-    Serial.println(" done");
+    Serial.println("Scuessfully set up access point");
 
     IPAddress ip = WiFi.softAPIP();
     Serial.print("AP IP address: ");
