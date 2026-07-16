@@ -36,10 +36,11 @@
         padding: 10px;
         font-weight: 700;
         width: 100%;
-        background-image: url("../../assets/icon/expand.svg");
+        background-image: url("../../../assets/icon/expand.svg");
         background-repeat: no-repeat;
         background-size: 20px;
         background-position: 99% center;
+        cursor: pointer;
     }
 
     .settings {
@@ -48,5 +49,18 @@
         display: flex;
         flex-direction: column;
         gap: 20px;
+    }
+
+    .settings > :global(* + *) {
+        position: relative;
+    }
+
+    .settings > :global(* + *)::before {
+        content: "";
+        position: absolute;
+        top: -10px;
+        left: 0;
+        right: 0;
+        border-top: solid 1px #444444;
     }
 </style>

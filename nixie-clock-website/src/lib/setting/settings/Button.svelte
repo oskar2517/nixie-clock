@@ -18,6 +18,7 @@
         padding: 5px 10px;
         text-align: center;
         color: white;
+        cursor: pointer;
     }
 
     button:hover {

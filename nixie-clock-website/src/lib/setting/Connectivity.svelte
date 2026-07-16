@@ -5,7 +5,11 @@
 </script>
 
 <SettingGroup title="Connectivity">
-    <TextInputSetting name="SSID" value=""></TextInputSetting>
+    <TextInputSetting
+        name="SSID"
+        description="This has to be the exact name of the WiFi network you want to connect to."
+        value=""
+    ></TextInputSetting>
     <TextInputSetting name="Password" value="" type="password"
     ></TextInputSetting>
     <Button name="Connect"></Button>

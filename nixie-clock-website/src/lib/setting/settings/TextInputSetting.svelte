@@ -5,7 +5,7 @@
         name: string;
         description?: string;
         value: string;
-        type?: "text" | "password";
+        type?: "text" | "password" | "number" | "time";
         disabled?: boolean;
         onchange?: () => void;
     }

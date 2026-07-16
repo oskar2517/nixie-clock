@@ -40,6 +40,7 @@
         display: flex;
         column-gap: 10px;
         align-items: center;
+        cursor: pointer;
     }
 
     .switch {
