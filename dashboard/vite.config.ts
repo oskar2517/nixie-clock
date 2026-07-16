@@ -23,5 +23,6 @@ export default defineConfig({
     plugins: [svelte(), emitIndexHtm()],
     build: {
         outDir: '../software/data/dashboard',
+        emptyOutDir: true,
     }
 })
