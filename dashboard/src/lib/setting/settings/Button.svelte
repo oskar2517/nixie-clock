@@ -2,13 +2,16 @@
     interface Props {
         name: string;
         disabled?: boolean;
+        busy?: boolean;
         onclick?: () => void;
     }
 
-    const { name, disabled = false, onclick }: Props = $props();
+    const { name, disabled = false, busy = false, onclick }: Props = $props();
 </script>
 
-<button class:disabled type="button" onclick={() => onclick?.()}>{name}</button>
+<button class:disabled class:busy type="button" onclick={() => onclick?.()}
+    >{name}</button
+>
 
 <style>
     button {
@@ -19,6 +22,7 @@
         text-align: center;
         color: white;
         cursor: pointer;
+        position: relative;
     }
 
     button:hover {
@@ -27,6 +31,31 @@
 
     button.disabled {
         pointer-events: none;
-        opacity: .5;
+        opacity: 0.5;
+    }
+
+    .busy::after {
+        content: "";
+        display: block;
+        height: 20px;
+        width: 20px;
+        background-image: url("../../../assets/icon/spinner.svg");
+        background-repeat: no-repeat;
+        background-size: 20px;
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        animation: ease spin 1s forwards infinite;
+    }
+
+    @keyframes spin {
+        from {
+            transform: translateY(-50%) rotate(0deg);
+        }
+
+        to {
+            transform: translateY(-50%) rotate(360deg);
+        }
     }
 </style>

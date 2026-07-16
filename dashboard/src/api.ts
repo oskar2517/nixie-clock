@@ -1,4 +1,4 @@
-interface WiFiResponse {
+export interface WiFiResponse {
     ssid: string;
 }
 
