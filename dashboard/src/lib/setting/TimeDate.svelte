@@ -5,7 +5,6 @@
     import SettingGroup from "./settings/SettingGroup.svelte";
     import Button from "./settings/Button.svelte";
     import SwitchSetting from "./settings/SwitchSetting.svelte";
-    import Result from "./common/Result.svelte";
     import {
         getTimeDisplayFormat,
         getTimezone,
@@ -15,11 +14,9 @@
     } from "../../api";
     import { convertIanaToPosix } from "../../util/posix_ts";
     import { onMount } from "svelte";
+    import { notification } from "./common/notification_store";
 
     const timezones = Object.keys(ct.getAllTimezones());
-
-    let result = $state("");
-    let error = $state(false);
 
     let timezoneIana = $state("");
     let timeDisplayFormat = $state("");
@@ -29,11 +26,15 @@
             const timestamp = Math.floor(Date.now() / 1000);
 
             await syncTime(timestamp);
-            error = false;
-            result = "Successfully set time";
+            $notification = {
+                severity: "normal",
+                message: "Successfully set time",
+            };
         } catch (err: any) {
-            error = true;
-            result = err;
+            $notification = {
+                severity: "error",
+                message: err.toString(),
+            };
         }
     }
 
@@ -43,19 +44,25 @@
         const timezonePosix = convertIanaToPosix(timezoneIana);
 
         if (!timezonePosix) {
-            error = true;
-            result = `Could not convert timezone ${timezoneIana} to Posix`;
+            $notification = {
+                severity: "error",
+                message: `Could not convert timezone ${timezoneIana} to Posix`,
+            };
             return;
         }
 
         try {
             const response = await setTimezone(timezonePosix, timezoneIana);
             timezoneIana = response.iana;
-            error = false;
-            result = `Successully updated timezone to ${timezoneIana} (${timezonePosix})`;
+            $notification = {
+                severity: "normal",
+                message: `Successully updated timezone to ${timezoneIana} (${timezonePosix})`,
+            };
         } catch (err: any) {
-            error = true;
-            result = err.toString();
+            $notification = {
+                severity: "error",
+                message: err.toString(),
+            };
         }
     }
 
@@ -66,11 +73,15 @@
             const format = timeDisplayFormat === "24-hour" ? 24 : 12;
             const response = await setTimeDisplayFormat(format);
             timeDisplayFormat = response.format === 24 ? "24-hour" : "12-hour";
-            error = false;
-            result = `Successfully changed time display format to ${timeDisplayFormat}`;
+            $notification = {
+                severity: "normal",
+                message: `Successfully changed time display format to ${timeDisplayFormat}`,
+            };
         } catch (err: any) {
-            error = true;
-            result = err.toString();
+            $notification = {
+                severity: "error",
+                message: err.toString(),
+            };
         }
     }
 
@@ -106,8 +117,4 @@
     ></SwitchSetting>
 
     <Button name="Synchronize Time Now" onclick={handleTimeSync}></Button>
-
-    {#if result !== ""}
-        <Result {error} message={result}></Result>
-    {/if}
 </SettingGroup>

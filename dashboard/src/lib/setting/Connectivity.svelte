@@ -9,12 +9,11 @@
         type WiFiResponse,
     } from "../../api";
     import { onMount } from "svelte";
-    import Result from "./common/Result.svelte";
+    import { notification } from "./common/notification_store";
 
     let ssid = $state("");
     let password = $state("");
 
-    let error = $state("");
     let connecting = $state(false);
     let wifiStatus: WiFiResponse | null = $state(null);
  
@@ -29,12 +28,14 @@
             connecting = true;
             wifiStatus = await setupWifiApi(ssid, password);
             connecting = false;
-            error = "";
             ssid = "";
             password = "";
         } catch (err: any) {
             connecting = false;
-            error = err.toString();
+            $notification = {
+                severity: "error",
+                message: err.toString(),
+            };
         }
     }
 
@@ -42,11 +43,13 @@
         try {
             await forgetWifiApi();
             wifiStatus = null;
-            error = "";
             ssid = "";
             password = "";
         } catch (err: any) {
-            error = err;
+            $notification = {
+                severity: "error",
+                message: err.toString(),
+            };
         }
     }
 </script>
@@ -81,10 +84,6 @@
             disabled={connecting || ssid.length === 0}
             onclick={setupWifi}
         ></Button>
-    {/if}
-
-    {#if error !== ""}
-        <Result error={true} message={error}></Result>
     {/if}
 </SettingGroup>
 

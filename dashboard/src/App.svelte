@@ -5,6 +5,7 @@
     import Connectivity from "./lib/setting/Connectivity.svelte";
     import TimeDate from "./lib/setting/TimeDate.svelte";
     import Timer from "./lib/setting/Timer.svelte";
+    import Notification from "./lib/setting/common/Notification.svelte";
 </script>
 
 <div class="main">
@@ -19,6 +20,8 @@
     <Timer />
 
     <Advanced />
+
+    <Notification />
 </div>
 
 <style>
