@@ -88,8 +88,8 @@ static void handle_wifi_setup(JsonDocument& request) {
 
     wifi_disconnect();
 
-    config["wifi_ssid"] = ssid;
-    config["wifi_password"] = password;
+    config.wifi_ssid = ssid;
+    config.wifi_password = password;
     if (!config_save()) {
         server.send(500);
         return;
@@ -101,21 +101,19 @@ static void handle_wifi_setup(JsonDocument& request) {
 }
 
 static void handle_wifi_status(JsonDocument& request) {
-    const char* ssid = config["wifi_ssid"];
-
-    if (!ssid) {
+    if (config.wifi_ssid.length() == 0) {
         server.send(404);
         return;
     }
 
     JsonDocument response;
-    response["ssid"] = ssid;
+    response["ssid"] = config.wifi_ssid;
     send_json(200, response);
 }
 
 static void handle_wifi_forget(JsonDocument& request) {
-    config.remove("wifi_ssid");
-    config.remove("wifi_password");
+    config.wifi_ssid = "";
+    config.wifi_password = "";
 
     if (!config_save()) {
         server.send(500);
@@ -142,8 +140,8 @@ static void handle_time_set(JsonDocument& request) {
 
 static void handle_timezone_get(JsonDocument& request) {
     JsonDocument response;
-    response["posix"] = config["timezone_posix"];
-    response["iana"] = config["timezone_iana"];
+    response["posix"] = config.timezone_posix;
+    response["iana"] = config.timezone_iana;
 
     send_json(200, response);
 }
@@ -162,8 +160,8 @@ static void handle_timezone_post(JsonDocument& request) {
         return;
     }
 
-    config["timezone_posix"] = timezone_posix;
-    config["timezone_iana"] = timezone_iana;
+    config.timezone_posix = timezone_posix;
+    config.timezone_iana = timezone_iana;
     if (!config_save()) {
         server.send(500);
         return;
@@ -178,7 +176,7 @@ static void handle_timezone_post(JsonDocument& request) {
 
 static void handle_time_display_format_get(JsonDocument& request) {
     JsonDocument response;
-    response["format"] = config["time_display_format"];
+    response["format"] = config.time_display_format;
 
     send_json(200, response);
 }
@@ -186,12 +184,13 @@ static void handle_time_display_format_get(JsonDocument& request) {
 static void handle_time_display_format_post(JsonDocument& request) {
     uint8_t time_display_format = request["format"];
 
-    if (!time_display_format || (time_display_format != 12 && time_display_format != 24)) {
+    if (!time_display_format ||
+        (time_display_format != 12 && time_display_format != 24)) {
         server.send(400);
         return;
     }
 
-    config["time_display_format"] = time_display_format;
+    config.time_display_format = time_display_format;
     if (!config_save()) {
         server.send(500);
         return;
@@ -216,8 +215,10 @@ static void setup_api() {
     on_api("/api/config/timezone", HTTP_POST, RequestBody::Json,
            handle_timezone_post);
 
-    on_api("/api/config/time_display_format", HTTP_GET, RequestBody::None, handle_time_display_format_get);
-    on_api("/api/config/time_display_format", HTTP_POST, RequestBody::Json, handle_time_display_format_post);
+    on_api("/api/config/time_display_format", HTTP_GET, RequestBody::None,
+           handle_time_display_format_get);
+    on_api("/api/config/time_display_format", HTTP_POST, RequestBody::Json,
+           handle_time_display_format_post);
 }
 
 void webserver_setup() {

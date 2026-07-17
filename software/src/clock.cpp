@@ -112,7 +112,7 @@ static void start_scan_timer() {
 static uint32_t time_display_value(const DateTime& now) {
     uint8_t hour = now.hour();
 
-    if (config["time_display_format"] == 12) {
+    if (config.time_display_format == 12) {
         hour %= 12;
         if (hour == 0) {
             hour = 12;

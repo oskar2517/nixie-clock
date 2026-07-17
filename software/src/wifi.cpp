@@ -5,14 +5,11 @@
 #include "config.h"
 
 bool wifi_connect_with_config_credentials() {
-    const char* ssid = config["wifi_ssid"];
-    const char* password = config["wifi_password"];
-
-    if (!ssid || !password) {
+    if (config.wifi_ssid.length() == 0 || config.wifi_password.length() == 0) {
         return false;
     }
 
-    return wifi_connect(ssid, password);
+    return wifi_connect(config.wifi_ssid.c_str(), config.wifi_password.c_str());
 }
 
 bool wifi_connect(const char* ssid, const char* password) {

@@ -67,7 +67,7 @@ bool rtc_ntp_fetch_time() {
     Serial.print("Fetching time from NTP server ");
     Serial.println(NTP_SERVER);
 
-    configTzTime(config["timezone_posix"], NTP_SERVER);
+    configTzTime(config.timezone_posix.c_str(), NTP_SERVER);
 
     if (!adjust_rtc()) {
         wifi_disconnect();
@@ -82,7 +82,7 @@ bool rtc_ntp_fetch_time() {
 bool rtc_set_unix_time(time_t unix_timestamp) {
     set_system_time(unix_timestamp);
 
-    if (!set_timezone(config["timezone_posix"])) {
+    if (!set_timezone(config.timezone_posix.c_str())) {
         return false;
     }
 
@@ -94,7 +94,7 @@ bool rtc_set_unix_time(time_t unix_timestamp) {
 }
 
 bool rtc_set_timezone(const char* posix_timezone) {
-    const char* current_posix_timezone = config["timezone_posix"];
+    const char* current_posix_timezone = config.timezone_posix.c_str();
 
     if (!set_timezone(current_posix_timezone)) {
         return false;

@@ -5,25 +5,40 @@
 
 #define CONFIG_FILE "/config.json"
 
-JsonDocument config;
+ClockConfig config;
 
-// TODO: Config should use type safe struct
 // TODO: Implement config validation
-void create_default_config() {
-    config.clear();
+static void set_default_config() {
+    config.wifi_ssid = "";
+    config.wifi_password = "";
+    config.timezone_posix = "CET-1CEST,M3.5.0/2,M10.5.0/3";
+    config.timezone_iana = "Europe/Berlin";
+    config.time_display_format = 24;
+}
 
-    config["timezone_posix"] = "CET-1CEST,M3.5.0/2,M10.5.0/3";
-    config["timezone_iana"] = "Europe/Berlin";
-    config["time_display_format"] = 24;
-
+static void create_default_config() {
+    set_default_config();
     Serial.println("Created default config");
 }
 
 bool config_save() {
     Serial.println("Saving config file to LittleFS...");
 
+    JsonDocument document;
+    document["timezone_posix"] = config.timezone_posix;
+    document["timezone_iana"] = config.timezone_iana;
+    document["time_display_format"] = config.time_display_format;
+
+    if (config.wifi_ssid.length() > 0) {
+        document["wifi_ssid"] = config.wifi_ssid;
+    }
+
+    if (config.wifi_password.length() > 0) {
+        document["wifi_password"] = config.wifi_password;
+    }
+
     String serialized;
-    size_t json_size = serializeJson(config, serialized);
+    size_t json_size = serializeJson(document, serialized);
     if (json_size == 0) {
         Serial.println("Failed to serialize config");
         return false;
@@ -58,7 +73,8 @@ void config_load() {
         return;
     }
 
-    DeserializationError error = deserializeJson(config, file);
+    JsonDocument document;
+    DeserializationError error = deserializeJson(document, file);
     file.close();
 
     if (error) {
@@ -67,6 +83,17 @@ void config_load() {
         create_default_config();
         return;
     }
+
+    set_default_config();
+
+    config.wifi_ssid = document["wifi_ssid"] | "";
+    config.wifi_password = document["wifi_password"] | "";
+    config.timezone_posix =
+        document["timezone_posix"] | config.timezone_posix.c_str();
+    config.timezone_iana =
+        document["timezone_iana"] | config.timezone_iana.c_str();
+    config.time_display_format =
+        document["time_display_format"] | config.time_display_format;
 
     Serial.println("Loaded config file successfully");
 }

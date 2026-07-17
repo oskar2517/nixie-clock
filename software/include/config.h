@@ -1,8 +1,16 @@
 #pragma once
 
-#include <ArduinoJson.h>
+#include <Arduino.h>
 
-extern JsonDocument config;
+struct ClockConfig {
+    String wifi_ssid;
+    String wifi_password;
+    String timezone_posix;
+    String timezone_iana;
+    uint8_t time_display_format;
+};
+
+extern ClockConfig config;
 
 void config_load();
 
