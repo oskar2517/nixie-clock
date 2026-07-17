@@ -5,6 +5,10 @@
 
 #define CONFIG_FILE "/config.json"
 
+#define COPY2CONF(conf_name, doc_name) \
+    config.conf_name = document[doc_name] | config.conf_name;
+#define COPY2DOC(doc_name, conf_name) document[doc_name] = config.conf_name;
+
 ClockConfig config;
 
 // TODO: Implement config validation
@@ -25,17 +29,11 @@ bool config_save() {
     Serial.println("Saving config file to LittleFS...");
 
     JsonDocument document;
-    document["timezone_posix"] = config.timezone_posix;
-    document["timezone_iana"] = config.timezone_iana;
-    document["time_display_format"] = config.time_display_format;
-
-    if (config.wifi_ssid.length() > 0) {
-        document["wifi_ssid"] = config.wifi_ssid;
-    }
-
-    if (config.wifi_password.length() > 0) {
-        document["wifi_password"] = config.wifi_password;
-    }
+    COPY2DOC("wifi_ssid", wifi_ssid)
+    COPY2DOC("wifi_password", wifi_password)
+    COPY2DOC("timezone_posix", timezone_posix)
+    COPY2DOC("timezone_iana", timezone_iana)
+    COPY2DOC("time_display_format", time_display_format)
 
     String serialized;
     size_t json_size = serializeJson(document, serialized);
@@ -86,14 +84,11 @@ void config_load() {
 
     set_default_config();
 
-    config.wifi_ssid = document["wifi_ssid"] | "";
-    config.wifi_password = document["wifi_password"] | "";
-    config.timezone_posix =
-        document["timezone_posix"] | config.timezone_posix.c_str();
-    config.timezone_iana =
-        document["timezone_iana"] | config.timezone_iana.c_str();
-    config.time_display_format =
-        document["time_display_format"] | config.time_display_format;
+    COPY2CONF(wifi_ssid, "wifi_ssid")
+    COPY2CONF(wifi_password, "wifi_password")
+    COPY2CONF(timezone_posix, "timezone_posix")
+    COPY2CONF(timezone_iana, "timezone_iana")
+    COPY2CONF(time_display_format, "time_display_format")
 
     Serial.println("Loaded config file successfully");
 }
