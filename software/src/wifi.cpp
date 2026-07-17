@@ -1,13 +1,14 @@
 #include "wifi.h"
-#include "config.h"
 
 #include <WiFi.h>
+
+#include "config.h"
 
 bool wifi_connect_with_config_credentials() {
     const char* ssid = config["wifi_ssid"];
     const char* password = config["wifi_password"];
 
-    if (!ssid | !password) {
+    if (!ssid || !password) {
         return false;
     }
 
@@ -29,6 +30,7 @@ bool wifi_connect(const char* ssid, const char* password) {
         if (attempt > 10) {
             Serial.println("");
             Serial.println("Failed to connect to WIFI.");
+            wifi_disconnect();
             return false;
         }
     }

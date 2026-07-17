@@ -6,4 +6,4 @@ extern JsonDocument config;
 
 void config_load();
 
-void config_save();
+bool config_save();

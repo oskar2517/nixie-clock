@@ -18,20 +18,20 @@ void create_default_config() {
     Serial.println("Created default config");
 }
 
-void config_save() {
+bool config_save() {
     Serial.println("Saving config file to LittleFS...");
 
     String serialized;
     size_t json_size = serializeJson(config, serialized);
     if (json_size == 0) {
         Serial.println("Failed to serialize config");
-        return;
+        return false;
     }
 
     File file = LittleFS.open(CONFIG_FILE, FILE_WRITE);
     if (!file) {
         Serial.println("Failed to open config file for writing");
-        return;
+        return false;
     }
 
     size_t written = file.print(serialized);
@@ -39,10 +39,12 @@ void config_save() {
 
     if (written != serialized.length()) {
         Serial.println("Failed to write complete config file");
-        return;
+        return false;
     }
 
     Serial.println("Saved config file successfully");
+
+    return true;
 }
 
 void config_load() {

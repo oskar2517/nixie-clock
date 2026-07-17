@@ -70,6 +70,7 @@ bool rtc_ntp_fetch_time() {
     configTzTime(config["timezone_posix"], NTP_SERVER);
 
     if (!adjust_rtc()) {
+        wifi_disconnect();
         return false;
     }
 

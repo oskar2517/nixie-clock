@@ -90,7 +90,10 @@ static void handle_wifi_setup(JsonDocument& request) {
 
     config["wifi_ssid"] = ssid;
     config["wifi_password"] = password;
-    config_save();
+    if (!config_save()) {
+        server.send(500);
+        return;
+    }
 
     JsonDocument response;
     response["ssid"] = ssid;
@@ -114,7 +117,10 @@ static void handle_wifi_forget(JsonDocument& request) {
     config.remove("wifi_ssid");
     config.remove("wifi_password");
 
-    config_save();
+    if (!config_save()) {
+        server.send(500);
+        return;
+    }
 
     server.send(204);
 }
@@ -158,7 +164,10 @@ static void handle_timezone_post(JsonDocument& request) {
 
     config["timezone_posix"] = timezone_posix;
     config["timezone_iana"] = timezone_iana;
-    config_save();
+    if (!config_save()) {
+        server.send(500);
+        return;
+    }
 
     JsonDocument response;
     response["posix"] = timezone_posix;
@@ -183,6 +192,10 @@ static void handle_time_display_format_post(JsonDocument& request) {
     }
 
     config["time_display_format"] = time_display_format;
+    if (!config_save()) {
+        server.send(500);
+        return;
+    }
 
     JsonDocument response;
     response["format"] = time_display_format;
