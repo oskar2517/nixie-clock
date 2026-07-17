@@ -7,6 +7,7 @@
 
 JsonDocument config;
 
+// TODO: Config should use type safe struct
 // TODO: Implement config validation
 void create_default_config() {
     config.clear();
