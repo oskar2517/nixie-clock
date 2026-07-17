@@ -138,10 +138,11 @@ static void handle_time_set(JsonDocument& request) {
     }
 }
 
-static void handle_timezone_get(JsonDocument& request) {
+static void handle_time_date_get(JsonDocument& request) {
     JsonDocument response;
-    response["posix"] = config.timezone_posix;
-    response["iana"] = config.timezone_iana;
+    response["timeDisplayFormat"] = config.time_display_format;
+    response["timezonePosix"] = config.timezone_posix;
+    response["timezoneIana"] = config.timezone_iana;
 
     send_json(200, response);
 }
@@ -170,13 +171,6 @@ static void handle_timezone_post(JsonDocument& request) {
     JsonDocument response;
     response["posix"] = timezone_posix;
     response["iana"] = timezone_iana;
-
-    send_json(200, response);
-}
-
-static void handle_time_display_format_get(JsonDocument& request) {
-    JsonDocument response;
-    response["format"] = config.time_display_format;
 
     send_json(200, response);
 }
@@ -210,14 +204,13 @@ static void setup_api() {
 
     on_api("/api/time", HTTP_POST, RequestBody::Json, handle_time_set);
 
-    on_api("/api/config/timezone", HTTP_GET, RequestBody::None,
-           handle_timezone_get);
-    on_api("/api/config/timezone", HTTP_POST, RequestBody::Json,
+    on_api("/api/config/time_date", HTTP_GET, RequestBody::None,
+           handle_time_date_get);
+
+    on_api("/api/config/time_date/timezone", HTTP_POST, RequestBody::Json,
            handle_timezone_post);
 
-    on_api("/api/config/time_display_format", HTTP_GET, RequestBody::None,
-           handle_time_display_format_get);
-    on_api("/api/config/time_display_format", HTTP_POST, RequestBody::Json,
+    on_api("/api/config/time_date/time_display_format", HTTP_POST, RequestBody::Json,
            handle_time_display_format_post);
 }
 

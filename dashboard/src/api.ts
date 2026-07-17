@@ -11,6 +11,12 @@ export interface TimeDisplayFormatResponse {
     format: 12 | 24;
 }
 
+export interface TimeDateConfig {
+    timeDisplayFormat: 12 | 24,
+    timezonePosix: string;
+    timezoneIana: string;
+}
+
 function createRequest(method: "POST" | "GET" | "DELETE", route: string, body?: string): Promise<Response> {
     if (body) {
         return fetch(route, {
@@ -67,14 +73,14 @@ export async function syncTime(timestamp: number): Promise<void> {
     }
 }
 
-export async function getTimezone(): Promise<TimezoneResponse> {
-    const response = await createRequest("GET", "/api/config/timezone");
+export async function getTimeDateConfig(): Promise<TimeDateConfig> {
+    const response = await createRequest("GET", "/api/config/time_date");
 
     return await response.json();
 }
 
 export async function setTimezone(posix: string, iana: string): Promise<TimezoneResponse> {
-    const response = await createRequest("POST", "/api/config/timezone", JSON.stringify({
+    const response = await createRequest("POST", "/api/config/time_date/timezone", JSON.stringify({
         posix,
         iana
     }));
@@ -86,14 +92,8 @@ export async function setTimezone(posix: string, iana: string): Promise<Timezone
     return await response.json();
 }
 
-export async function getTimeDisplayFormat(): Promise<TimeDisplayFormatResponse> {
-    const response = await createRequest("GET", "/api/config/time_display_format");
-
-    return await response.json();
-}
-
 export async function setTimeDisplayFormat(format: 12 | 24): Promise<TimeDisplayFormatResponse> {
-    const response = await createRequest("POST", "/api/config/time_display_format", JSON.stringify({
+    const response = await createRequest("POST", "/api/config/time_date/time_display_format", JSON.stringify({
         format
     }));
 

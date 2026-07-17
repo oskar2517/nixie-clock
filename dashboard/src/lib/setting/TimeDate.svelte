@@ -6,8 +6,7 @@
     import Button from "./settings/Button.svelte";
     import SwitchSetting from "./settings/SwitchSetting.svelte";
     import {
-        getTimeDisplayFormat,
-        getTimezone,
+    getTimeDateConfig,
         setTimeDisplayFormat,
         setTimezone,
         syncTime,
@@ -86,12 +85,9 @@
     }
 
     onMount(async () => {
-        const timezoneResponse = await getTimezone();
-        timezoneIana = timezoneResponse.iana;
-
-        const timeDisplayFormatResponse = await getTimeDisplayFormat();
-        timeDisplayFormat =
-            timeDisplayFormatResponse.format === 24 ? "24-hour" : "12-hour";
+        const config = await getTimeDateConfig();
+        timezoneIana = config.timezoneIana;
+        timeDisplayFormat = config.timeDisplayFormat === 24 ? "24-hour" : "12-hour";
     });
 </script>
 
