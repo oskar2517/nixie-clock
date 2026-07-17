@@ -32,6 +32,8 @@ static volatile uint8_t display_digits[digit_count] = {};
 RTC_DS3231 rtc;
 static bool rtc_available = false;
 
+static bool acp_routine_running = false;
+
 static void set_display(uint32_t value) {
     uint8_t digits[digit_count];
 
@@ -199,17 +201,31 @@ static void init_rtc() {
 }
 
 static void anti_cathode_poisoning_routine() {
-    for (uint8_t i = 0; i < 2; i++) {
-        for (uint8_t j = 0; j < 10; j++) {
-            uint32_t n = j * 111111;
+    if (!acp_routine_running) return;
 
-            set_display(n);
-            delay(100);
-        }
+    static uint32_t last_step_millis = millis();
+    static uint8_t step = 0;
+
+    if (millis() - last_step_millis < 100) return;
+    last_step_millis = millis();
+
+    if (step < 20) {
+        uint32_t n = (step % 10) * 111111;
+
+        set_display(n);
+
+        step++;
+    } else {
+        acp_routine_running = false;
+        step = 0;
     }
 }
 
 void clock_update() {
+    anti_cathode_poisoning_routine();
+
+    if (acp_routine_running) return;
+
     static uint32_t last_read_ms = 0;
     static uint32_t last_ntp_update = 0;
     static uint8_t last_second = UINT8_MAX;
@@ -231,7 +247,7 @@ void clock_update() {
         }
 
         if (now_s == 0) {
-            anti_cathode_poisoning_routine();
+            acp_routine_running = true;
         }
 
         sync_neons_to_second_phase(second_started_ms);
