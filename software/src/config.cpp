@@ -13,6 +13,7 @@ void create_default_config() {
 
     config["timezone_posix"] = "CET-1CEST,M3.5.0/2,M10.5.0/3";
     config["timezone_iana"] = "Europe/Berlin";
+    config["time_display_format"] = 24;
 
     Serial.println("Created default config");
 }

@@ -7,6 +7,10 @@ export interface TimezoneResponse {
     posix: string;
 }
 
+export interface TimeDisplayFormatResponse {
+    format: 12 | 24;
+}
+
 function createRequest(method: "POST" | "GET" | "DELETE", route: string, body?: string): Promise<Response> {
     if (body) {
         return fetch(route, {
@@ -73,6 +77,24 @@ export async function setTimezone(posix: string, iana: string): Promise<Timezone
     const response = await createRequest("POST", "/api/config/timezone", JSON.stringify({
         posix,
         iana
+    }));
+
+    if (!response.ok) {
+        throw new Error("Failed to set timezone");
+    }
+
+    return await response.json();
+}
+
+export async function getTimeDisplayFormat(): Promise<TimeDisplayFormatResponse> {
+    const response = await createRequest("GET", "/api/config/time_display_format");
+
+    return await response.json();
+}
+
+export async function setTimeDisplayFormat(format: 12 | 24): Promise<TimeDisplayFormatResponse> {
+    const response = await createRequest("POST", "/api/config/time_display_format", JSON.stringify({
+        format
     }));
 
     if (!response.ok) {

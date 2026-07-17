@@ -167,6 +167,29 @@ static void handle_timezone_post(JsonDocument& request) {
     send_json(200, response);
 }
 
+static void handle_time_display_format_get(JsonDocument& request) {
+    JsonDocument response;
+    response["format"] = config["time_display_format"];
+
+    send_json(200, response);
+}
+
+static void handle_time_display_format_post(JsonDocument& request) {
+    uint8_t time_display_format = request["format"];
+
+    if (!time_display_format || (time_display_format != 12 && time_display_format != 24)) {
+        server.send(400);
+        return;
+    }
+
+    config["time_display_format"] = time_display_format;
+
+    JsonDocument response;
+    response["format"] = time_display_format;
+
+    send_json(200, response);
+}
+
 // TODO: Button to reset config
 static void setup_api() {
     on_api("/api/wifi", HTTP_POST, RequestBody::Json, handle_wifi_setup);
@@ -179,6 +202,9 @@ static void setup_api() {
            handle_timezone_get);
     on_api("/api/config/timezone", HTTP_POST, RequestBody::Json,
            handle_timezone_post);
+
+    on_api("/api/config/time_display_format", HTTP_GET, RequestBody::None, handle_time_display_format_get);
+    on_api("/api/config/time_display_format", HTTP_POST, RequestBody::Json, handle_time_display_format_post);
 }
 
 void webserver_setup() {

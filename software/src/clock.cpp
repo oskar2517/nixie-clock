@@ -1,6 +1,7 @@
 #include "RTClib.h"
-#include "rtc.h"
 #include "pins.h"
+#include "rtc.h"
+#include "config.h"
 
 // Multiplexing config
 #define SCAN_TICK_US 100
@@ -109,7 +110,16 @@ static void start_scan_timer() {
 }
 
 static uint32_t time_display_value(const DateTime& now) {
-    return (now.hour() * 10000UL) + (now.minute() * 100UL) + now.second();
+    uint8_t hour = now.hour();
+
+    if (config["time_display_format"] == 12) {
+        hour %= 12;
+        if (hour == 0) {
+            hour = 12;
+        }
+    }
+
+    return (hour * 10000UL) + (now.minute() * 100UL) + now.second();
 }
 
 static uint32_t neon_duty_from_percent(uint8_t percent) {

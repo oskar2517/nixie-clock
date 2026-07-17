@@ -6,7 +6,13 @@
     import Button from "./settings/Button.svelte";
     import SwitchSetting from "./settings/SwitchSetting.svelte";
     import Result from "./common/Result.svelte";
-    import { getTimezone, setTimezone, syncTime } from "../../api";
+    import {
+        getTimeDisplayFormat,
+        getTimezone,
+        setTimeDisplayFormat,
+        setTimezone,
+        syncTime,
+    } from "../../api";
     import { convertIanaToPosix } from "../../util/posix_ts";
     import { onMount } from "svelte";
 
@@ -16,6 +22,7 @@
     let error = $state(false);
 
     let timezoneIana = $state("");
+    let timeDisplayFormat = $state("");
 
     async function handleTimeSync() {
         try {
@@ -52,9 +59,28 @@
         }
     }
 
+    async function handleTimeDisplayFormatChange() {
+        if (timeDisplayFormat === "") return;
+
+        try {
+            const format = timeDisplayFormat === "24-hour" ? 24 : 12;
+            const response = await setTimeDisplayFormat(format);
+            timeDisplayFormat = response.format === 24 ? "24-hour" : "12-hour";
+            error = false;
+            result = `Successfully changed time display format to ${timeDisplayFormat}`;
+        } catch (err: any) {
+            error = true;
+            result = err.toString();
+        }
+    }
+
     onMount(async () => {
         const timezoneResponse = await getTimezone();
         timezoneIana = timezoneResponse.iana;
+
+        const timeDisplayFormatResponse = await getTimeDisplayFormat();
+        timeDisplayFormat =
+            timeDisplayFormatResponse.format === 24 ? "24-hour" : "12-hour";
     });
 </script>
 
@@ -69,7 +95,8 @@
     <SelectSetting
         name="Time Display Format"
         options={["12-hour", "24-hour"]}
-        value="24-hour"
+        bind:value={timeDisplayFormat}
+        onchange={handleTimeDisplayFormatChange}
     ></SelectSetting>
 
     <SwitchSetting
