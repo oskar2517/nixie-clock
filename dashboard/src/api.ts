@@ -47,3 +47,13 @@ export async function getWifiStatus(): Promise<WiFiResponse> {
 export async function forgetWifi(): Promise<void> {
     await createRequest("DELETE", "/api/wifi");
 }
+
+export async function syncTime(timestamp: number): Promise<void> {
+    const response = await createRequest("POST", "/api/time", JSON.stringify({
+        timestamp
+    }));
+
+    if (!response.ok) {
+        throw new Error("Failed to set time");
+    }
+}

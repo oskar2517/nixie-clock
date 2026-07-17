@@ -9,7 +9,7 @@
         type WiFiResponse,
     } from "../../api";
     import { onMount } from "svelte";
-    import Error from "./common/Error.svelte";
+    import Result from "./common/Result.svelte";
 
     let ssid = $state("");
     let password = $state("");
@@ -84,7 +84,7 @@
     {/if}
 
     {#if error !== ""}
-        <Error message={error}></Error>
+        <Result error={true} message={error}></Result>
     {/if}
 </SettingGroup>
 

@@ -7,6 +7,7 @@
 
 #include "config.h"
 #include "filesystem.h"
+#include "rtc.h"
 #include "wifi.h"
 
 #define BASE_PATH "/dashboard/"
@@ -118,10 +119,27 @@ static void handle_wifi_forget(JsonDocument& request) {
     server.send(204);
 }
 
+static void handle_time_set(JsonDocument& request) {
+    int64_t unix_timestamp = request["timestamp"] | 0;
+
+    if (unix_timestamp <= 0 || unix_timestamp > INT32_MAX) {
+        server.send(400);
+        return;
+    }
+
+    if (rtc_set_unix_time((time_t)unix_timestamp)) {
+        server.send(200);
+    } else {
+        server.send(500);
+    }
+}
+
 static void setup_api() {
     on_api("/api/wifi", HTTP_POST, RequestBody::Json, handle_wifi_setup);
     on_api("/api/wifi", HTTP_GET, RequestBody::None, handle_wifi_status);
     on_api("/api/wifi", HTTP_DELETE, RequestBody::None, handle_wifi_forget);
+
+    on_api("/api/time", HTTP_POST, RequestBody::Json, handle_time_set);
 }
 
 void webserver_setup() {

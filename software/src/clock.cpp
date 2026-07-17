@@ -1,5 +1,5 @@
 #include "RTClib.h"
-#include "ntp.h"
+#include "rtc.h"
 #include "pins.h"
 
 // Multiplexing config
@@ -152,7 +152,7 @@ static void init_rtc() {
         return;
     }
 
-    if (rtc.lostPower() && !ntp_fetch_time()) {
+    if (rtc.lostPower() && !rtc_ntp_fetch_time()) {
         rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
     }
 
