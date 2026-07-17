@@ -11,10 +11,15 @@ export interface TimeDisplayFormatResponse {
     format: 12 | 24;
 }
 
+export interface AutomaticTimeResponse {
+    automatic: boolean;
+}
+
 export interface TimeDateConfig {
     timeDisplayFormat: 12 | 24,
     timezonePosix: string;
     timezoneIana: string;
+    automaticTime: boolean;
 }
 
 function createRequest(method: "POST" | "GET" | "DELETE", route: string, body?: string): Promise<Response> {
@@ -99,6 +104,18 @@ export async function setTimeDisplayFormat(format: 12 | 24): Promise<TimeDisplay
 
     if (!response.ok) {
         throw new Error("Failed to set timezone");
+    }
+
+    return await response.json();
+}
+
+export async function setAutomaticTime(automatic: boolean): Promise<AutomaticTimeResponse> {
+    const response = await createRequest("POST", "/api/config/time_date/automatic_time", JSON.stringify({
+        automatic
+    }));
+
+    if (!response.ok) {
+        throw new Error("Failed to update automatic time");
     }
 
     return await response.json();

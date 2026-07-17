@@ -143,6 +143,7 @@ static void handle_time_date_get(JsonDocument& request) {
     response["timeDisplayFormat"] = config.time_display_format;
     response["timezonePosix"] = config.timezone_posix;
     response["timezoneIana"] = config.timezone_iana;
+    response["automaticTime"] = config.automatic_time;
 
     send_json(200, response);
 }
@@ -196,6 +197,21 @@ static void handle_time_display_format_post(JsonDocument& request) {
     send_json(200, response);
 }
 
+static void handle_automatic_time_post(JsonDocument& request) {
+    bool automatic = request["automatic"];
+
+    config.automatic_time = automatic;
+    if (!config_save()) {
+        server.send(500);
+        return;
+    }
+
+    JsonDocument response;
+    response["automatic"] = automatic;
+
+    send_json(200, response);
+}
+
 // TODO: Button to reset config
 static void setup_api() {
     on_api("/api/wifi", HTTP_POST, RequestBody::Json, handle_wifi_setup);
@@ -212,6 +228,9 @@ static void setup_api() {
 
     on_api("/api/config/time_date/time_display_format", HTTP_POST, RequestBody::Json,
            handle_time_display_format_post);
+        
+    on_api("/api/config/time_date/automatic_time", HTTP_POST, RequestBody::Json,
+           handle_automatic_time_post);
 }
 
 void webserver_setup() {

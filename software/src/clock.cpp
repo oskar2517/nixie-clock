@@ -1,7 +1,7 @@
 #include "RTClib.h"
+#include "config.h"
 #include "pins.h"
 #include "rtc.h"
-#include "config.h"
 
 // Multiplexing config
 #define SCAN_TICK_US 100
@@ -162,7 +162,7 @@ static void init_rtc() {
         return;
     }
 
-    if (rtc.lostPower() && !rtc_ntp_fetch_time()) {
+    if (rtc.lostPower()) {
         rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
     }
 
@@ -184,6 +184,7 @@ static void anti_cathode_poisoning_routine() {
 
 void clock_update() {
     static uint32_t last_read_ms = 0;
+    static uint32_t last_ntp_update = 0;
     static uint8_t last_second = UINT8_MAX;
     static uint32_t second_started_ms = 0;
     uint32_t now_ms = millis();
@@ -205,6 +206,15 @@ void clock_update() {
         }
 
         sync_neons_to_second_phase(second_started_ms);
+    }
+
+    if (config.automatic_time && now_ms - last_ntp_update >= 1000 * 60 * 60) {
+        Serial.println("Setting time automatically...");
+        last_ntp_update = now_ms;
+
+        if (!rtc_ntp_fetch_time()) {
+            Serial.println("Failed to set time automatically");
+        }
     }
 }
 

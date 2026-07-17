@@ -6,7 +6,8 @@
     import Button from "./settings/Button.svelte";
     import SwitchSetting from "./settings/SwitchSetting.svelte";
     import {
-    getTimeDateConfig,
+        getTimeDateConfig,
+        setAutomaticTime,
         setTimeDisplayFormat,
         setTimezone,
         syncTime,
@@ -19,6 +20,7 @@
 
     let timezoneIana = $state("");
     let timeDisplayFormat = $state("");
+    let automaticTime = $state(false);
 
     async function handleTimeSync() {
         try {
@@ -84,10 +86,30 @@
         }
     }
 
+    async function handleAutomaticTimeChange() {
+        try {
+            const response = await setAutomaticTime(automaticTime);
+            automaticTime = response.automatic;
+            $notification = {
+                severity: "normal",
+                message: automaticTime
+                    ? "Enabled setting time automatically"
+                    : "Disabled setting time automatically",
+            };
+        } catch (err: any) {
+            $notification = {
+                severity: "error",
+                message: err.toString(),
+            };
+        }
+    }
+
     onMount(async () => {
         const config = await getTimeDateConfig();
         timezoneIana = config.timezoneIana;
-        timeDisplayFormat = config.timeDisplayFormat === 24 ? "24-hour" : "12-hour";
+        timeDisplayFormat =
+            config.timeDisplayFormat === 24 ? "24-hour" : "12-hour";
+        automaticTime = config.automaticTime;
     });
 </script>
 
@@ -109,7 +131,8 @@
     <SwitchSetting
         name="Set Time Automatically"
         description="Automatically set and update the clock using internet time (requires WiFi connection)."
-        value={true}
+        bind:value={automaticTime}
+        onchange={handleAutomaticTimeChange}
     ></SwitchSetting>
 
     <Button name="Synchronize Time Now" onclick={handleTimeSync}></Button>

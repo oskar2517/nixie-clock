@@ -8,6 +8,7 @@ struct ClockConfig {
     String timezone_posix;
     String timezone_iana;
     uint8_t time_display_format;
+    bool automatic_time;
 };
 
 extern ClockConfig config;
