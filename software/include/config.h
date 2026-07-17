@@ -9,6 +9,11 @@ struct ClockConfig {
     String timezone_iana;
     uint8_t time_display_format;
     bool automatic_time;
+    bool timer;
+    uint8_t timer_tubes_off_hours;
+    uint8_t timer_tubes_off_minutes;
+    uint8_t timer_tubes_on_hours;
+    uint8_t timer_tubes_on_minutes;
 };
 
 extern ClockConfig config;

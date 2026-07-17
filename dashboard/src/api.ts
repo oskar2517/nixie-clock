@@ -22,6 +22,21 @@ export interface TimeDateConfig {
     automaticTime: boolean;
 }
 
+export interface TimerConfig {
+    timer: boolean;
+    tubesOffHours: number;
+    tubesOffMinutes: number;
+    tubesOnHours: number;
+    tubesOnMinutes: number;
+}
+
+interface TimerIntervalResponse {
+    tubesOffHours: number;
+    tubesOffMinutes: number;
+    tubesOnHours: number;
+    tubesOnMinutes: number;
+}
+
 function createRequest(method: "POST" | "GET" | "DELETE", route: string, body?: string): Promise<Response> {
     if (body) {
         return fetch(route, {
@@ -116,6 +131,44 @@ export async function setAutomaticTime(automatic: boolean): Promise<AutomaticTim
 
     if (!response.ok) {
         throw new Error("Failed to update automatic time");
+    }
+
+    return await response.json();
+}
+
+export async function getTimerConfig(): Promise<TimerConfig> {
+    const response = await createRequest("GET", "/api/config/timer");
+
+    return await response.json();
+}
+
+export async function setTimer(timer: boolean): Promise<AutomaticTimeResponse> {
+    const response = await createRequest("POST", "/api/config/timer/timer", JSON.stringify({
+        timer
+    }));
+
+    if (!response.ok) {
+        throw new Error("Failed to enable timer");
+    }
+
+    return await response.json();
+}
+
+export async function setTimerInterval(
+    tubesOffHours: number,
+    tubesOffMinutes: number,
+    tubesOnHours: number,
+    tubesOnMinutes: number
+): Promise<AutomaticTimeResponse> {
+    const response = await createRequest("POST", "/api/config/timer/interval", JSON.stringify({
+        tubesOffHours,
+        tubesOffMinutes,
+        tubesOnHours,
+        tubesOnMinutes
+    }));
+
+    if (!response.ok) {
+        throw new Error("Failed to update timer interval");
     }
 
     return await response.json();

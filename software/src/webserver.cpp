@@ -179,8 +179,7 @@ static void handle_timezone_post(JsonDocument& request) {
 static void handle_time_display_format_post(JsonDocument& request) {
     uint8_t time_display_format = request["format"];
 
-    if (!time_display_format ||
-        (time_display_format != 12 && time_display_format != 24)) {
+    if ((time_display_format != 12 && time_display_format != 24)) {
         server.send(400);
         return;
     }
@@ -212,6 +211,56 @@ static void handle_automatic_time_post(JsonDocument& request) {
     send_json(200, response);
 }
 
+static void handle_timer_get(JsonDocument& request) {
+    JsonDocument response;
+    response["timer"] = config.timer;
+    response["tubesOffHours"] = config.timer_tubes_off_hours;
+    response["tubesOffMinutes"] = config.timer_tubes_off_minutes;
+    response["tubesOnHours"] = config.timer_tubes_on_hours;
+    response["tubesOnMinutes"] = config.timer_tubes_on_minutes;
+
+    send_json(200, response);
+}
+
+static void handle_timer_enabled_post(JsonDocument& request) {
+    bool timer = request["timer"];
+
+    config.timer = timer;
+    if (!config_save()) {
+        server.send(500);
+        return;
+    }
+
+    JsonDocument response;
+    response["timer"] = timer;
+
+    send_json(200, response);
+}
+
+static void handle_timer_interval_post(JsonDocument& request) {
+    uint8_t off_hours = request["tubesOffHours"];
+    uint8_t off_minutes = request["tubesOffMinutes"];
+    uint8_t on_hours = request["tubesOnHours"];
+    uint8_t on_minutes = request["tubesOnMinutes"];
+
+    config.timer_tubes_off_hours = off_hours;
+    config.timer_tubes_off_minutes = off_minutes;
+    config.timer_tubes_on_hours = on_hours;
+    config.timer_tubes_on_minutes = on_minutes;
+    if (!config_save()) {
+        server.send(500);
+        return;
+    }
+
+    JsonDocument response;
+    response["tubesOffHours"] = off_hours;
+    response["tubesOffMinutes"] = off_minutes;
+    response["tubesOnHours"] = on_hours;
+    response["tubesOnMinutes"] = on_minutes;
+
+    send_json(200, response);
+}
+
 // TODO: Button to reset config
 static void setup_api() {
     on_api("/api/wifi", HTTP_POST, RequestBody::Json, handle_wifi_setup);
@@ -226,11 +275,19 @@ static void setup_api() {
     on_api("/api/config/time_date/timezone", HTTP_POST, RequestBody::Json,
            handle_timezone_post);
 
-    on_api("/api/config/time_date/time_display_format", HTTP_POST, RequestBody::Json,
-           handle_time_display_format_post);
-        
+    on_api("/api/config/time_date/time_display_format", HTTP_POST,
+           RequestBody::Json, handle_time_display_format_post);
+
     on_api("/api/config/time_date/automatic_time", HTTP_POST, RequestBody::Json,
            handle_automatic_time_post);
+
+    on_api("/api/config/timer", HTTP_GET, RequestBody::None, handle_timer_get);
+
+    on_api("/api/config/timer/timer", HTTP_POST, RequestBody::Json,
+           handle_timer_enabled_post);
+
+    on_api("/api/config/timer/interval", HTTP_POST, RequestBody::Json,
+           handle_timer_interval_post);
 }
 
 void webserver_setup() {

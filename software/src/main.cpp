@@ -8,7 +8,7 @@
 #include "webserver.h"
 #include "wifi.h"
 
-static void set_hv_enabled(boolean enabled) { digitalWrite(PIN_SHDN, enabled); }
+void set_hv_enabled(bool enabled) { digitalWrite(PIN_SHDN, enabled); }
 
 void setup() {
     setup_pin(PIN_SHDN);

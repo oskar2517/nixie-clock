@@ -19,6 +19,11 @@ static void set_default_config() {
     config.timezone_iana = "Europe/Berlin";
     config.time_display_format = 24;
     config.automatic_time = true;
+    config.timer = false;
+    config.timer_tubes_off_hours = 22;
+    config.timer_tubes_off_minutes = 0;
+    config.timer_tubes_on_hours = 9;
+    config.timer_tubes_on_minutes = 0;
 }
 
 static void create_default_config() {
@@ -36,6 +41,11 @@ bool config_save() {
     COPY2DOC("timezone_iana", timezone_iana)
     COPY2DOC("time_display_format", time_display_format)
     COPY2DOC("automatic_time", automatic_time)
+    COPY2DOC("timer", timer)
+    COPY2DOC("timer_tubes_off_hours", timer_tubes_off_hours)
+    COPY2DOC("timer_tubes_off_minutes", timer_tubes_off_minutes)
+    COPY2DOC("timer_tubes_on_hours", timer_tubes_on_hours)
+    COPY2DOC("timer_tubes_on_minutes", timer_tubes_on_minutes)
 
     String serialized;
     size_t json_size = serializeJson(document, serialized);
@@ -92,6 +102,11 @@ void config_load() {
     COPY2CONF(timezone_iana, "timezone_iana")
     COPY2CONF(time_display_format, "time_display_format")
     COPY2CONF(automatic_time, "automatic_time")
+    COPY2CONF(timer, "timer")
+    COPY2CONF(timer_tubes_off_hours, "timer_tubes_off_hours")
+    COPY2CONF(timer_tubes_off_minutes, "timer_tubes_off_minutes")
+    COPY2CONF(timer_tubes_on_hours, "timer_tubes_on_hours")
+    COPY2CONF(timer_tubes_on_minutes, "timer_tubes_on_minutes")
 
     Serial.println("Loaded config file successfully");
 }

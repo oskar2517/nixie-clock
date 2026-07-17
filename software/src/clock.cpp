@@ -1,5 +1,6 @@
 #include "RTClib.h"
 #include "config.h"
+#include "main.h"
 #include "pins.h"
 #include "rtc.h"
 
@@ -109,6 +110,32 @@ static void start_scan_timer() {
     timerAlarmEnable(scan_timer);
 }
 
+static uint16_t minutes_since_midnight(uint8_t hours, uint8_t minutes) {
+    return (hours * 60U) + minutes;
+}
+
+static bool tubes_should_sleep(const DateTime& now) {
+    if (!config.timer) {
+        return false;
+    }
+
+    uint16_t current_time = minutes_since_midnight(now.hour(), now.minute());
+    uint16_t off_time = minutes_since_midnight(config.timer_tubes_off_hours,
+                                               config.timer_tubes_off_minutes);
+    uint16_t on_time = minutes_since_midnight(config.timer_tubes_on_hours,
+                                              config.timer_tubes_on_minutes);
+
+    if (off_time == on_time) {
+        return false;
+    }
+
+    if (off_time < on_time) {
+        return current_time >= off_time && current_time < on_time;
+    }
+
+    return current_time >= off_time || current_time < on_time;
+}
+
 static uint32_t time_display_value(const DateTime& now) {
     uint8_t hour = now.hour();
 
@@ -194,6 +221,8 @@ void clock_update() {
 
         DateTime now = rtc.now();
         uint8_t now_s = now.second();
+
+        set_hv_enabled(!tubes_should_sleep(now));
 
         if (now_s != last_second) {
             last_second = now.second();
