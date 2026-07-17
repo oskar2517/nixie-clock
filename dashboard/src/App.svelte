@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
     import NixieClock from "./lib/nixie/NixieClock.svelte";
     import Advanced from "./lib/setting/Advanced.svelte";
     import Display from "./lib/setting/Display.svelte";

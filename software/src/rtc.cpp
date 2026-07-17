@@ -1,12 +1,34 @@
-#include "RTClib.h"
-#include "clock.h"
-#include "wifi.h"
-
 #include <sys/time.h>
 #include <time.h>
 
+#include "RTClib.h"
+#include "clock.h"
+#include "config.h"
+#include "wifi.h"
+
 #define NTP_SERVER "pool.ntp.org"
-#define TIMEZONE "CET-1CEST,M3.5.0/2,M10.5.0/3"
+
+static tm tm_from_datetime(const DateTime& datetime) {
+    tm timeinfo = {};
+    timeinfo.tm_year = datetime.year() - 1900;
+    timeinfo.tm_mon = datetime.month() - 1;
+    timeinfo.tm_mday = datetime.day();
+    timeinfo.tm_hour = datetime.hour();
+    timeinfo.tm_min = datetime.minute();
+    timeinfo.tm_sec = datetime.second();
+    timeinfo.tm_isdst = -1;
+
+    return timeinfo;
+}
+
+static void set_system_time(time_t unix_timestamp) {
+    timeval tv = {
+        .tv_sec = unix_timestamp,
+        .tv_usec = 0,
+    };
+
+    settimeofday(&tv, nullptr);
+}
 
 static bool adjust_rtc() {
     struct tm timeinfo;
@@ -29,13 +51,23 @@ static bool adjust_rtc() {
     return true;
 }
 
+static bool set_timezone(const char* posix_timezone) {
+    if (!posix_timezone) {
+        return false;
+    }
+
+    setenv("TZ", posix_timezone, 1);
+    tzset();
+    return true;
+}
+
 bool rtc_ntp_fetch_time() {
     if (!wifi_connect_with_config_credentials()) return false;
 
     Serial.print("Fetching time from NTP server ");
     Serial.println(NTP_SERVER);
 
-    configTzTime(TIMEZONE, NTP_SERVER);
+    configTzTime(config["timezone_posix"], NTP_SERVER);
 
     if (!adjust_rtc()) {
         return false;
@@ -47,19 +79,37 @@ bool rtc_ntp_fetch_time() {
 }
 
 bool rtc_set_unix_time(time_t unix_timestamp) {
-    timeval tv = {
-        .tv_sec = unix_timestamp,
-        .tv_usec = 0,
-    };
+    set_system_time(unix_timestamp);
 
-    settimeofday(&tv, nullptr);
-
-    setenv("TZ", TIMEZONE, 1);
-    tzset();
+    if (!set_timezone(config["timezone_posix"])) {
+        return false;
+    }
 
     if (!adjust_rtc()) {
         return false;
     }
 
     return true;
+}
+
+bool rtc_set_timezone(const char* posix_timezone) {
+    const char* current_posix_timezone = config["timezone_posix"];
+
+    if (!set_timezone(current_posix_timezone)) {
+        return false;
+    }
+
+    tm current_time = tm_from_datetime(rtc.now());
+    time_t unix_timestamp = mktime(&current_time);
+    if (unix_timestamp == (time_t)-1) {
+        return false;
+    }
+
+    set_system_time(unix_timestamp);
+
+    if (!set_timezone(posix_timezone)) {
+        return false;
+    }
+
+    return adjust_rtc();
 }

@@ -7,6 +7,16 @@
 
 JsonDocument config;
 
+// TODO: Implement config validation
+void create_default_config() {
+    config.clear();
+
+    config["timezone_posix"] = "CET-1CEST,M3.5.0/2,M10.5.0/3";
+    config["timezone_iana"] = "Europe/Berlin";
+
+    Serial.println("Created default config");
+}
+
 void config_save() {
     Serial.println("Saving config file to LittleFS...");
 
@@ -40,7 +50,7 @@ void config_load() {
     File file = LittleFS.open(CONFIG_FILE, FILE_READ);
     if (!file || file.isDirectory()) {
         Serial.println("Failed to open config file for reading");
-        config.clear();
+        create_default_config();
         return;
     }
 
@@ -50,7 +60,7 @@ void config_load() {
     if (error) {
         Serial.print("Failed to parse config file: ");
         Serial.println(error.c_str());
-        config.clear();
+        create_default_config();
         return;
     }
 

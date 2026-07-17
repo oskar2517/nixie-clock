@@ -16,11 +16,12 @@
         options,
         value = $bindable(),
         disabled,
+        onchange
     }: Props = $props();
 </script>
 
 <Setting {name} {description} {disabled}>
-    <select class="select-setting" bind:value>
+    <select class="select-setting" bind:value {onchange}>
         {#each options as o}
             <option value={o}>{o}</option>
         {/each}

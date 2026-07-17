@@ -2,6 +2,11 @@ export interface WiFiResponse {
     ssid: string;
 }
 
+export interface TimezoneResponse {
+    iana: string;
+    posix: string;
+}
+
 function createRequest(method: "POST" | "GET" | "DELETE", route: string, body?: string): Promise<Response> {
     if (body) {
         return fetch(route, {
@@ -56,4 +61,23 @@ export async function syncTime(timestamp: number): Promise<void> {
     if (!response.ok) {
         throw new Error("Failed to set time");
     }
+}
+
+export async function getTimezone(): Promise<TimezoneResponse> {
+    const response = await createRequest("GET", "/api/config/timezone");
+
+    return await response.json();
+}
+
+export async function setTimezone(posix: string, iana: string): Promise<TimezoneResponse> {
+    const response = await createRequest("POST", "/api/config/timezone", JSON.stringify({
+        posix,
+        iana
+    }));
+
+    if (!response.ok) {
+        throw new Error("Failed to set timezone");
+    }
+
+    return await response.json();
 }
