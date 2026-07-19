@@ -6,7 +6,7 @@
 
 // Multiplexing config
 #define SCAN_TICK_US 100
-#define ANODE_ON_TICKS (1000 / SCAN_TICK_US)
+#define ANODE_ON_TICKS (2000 / SCAN_TICK_US)
 #define CATHODE_OFF_DELAY_TICKS (400 / SCAN_TICK_US)
 #define BLANK_TICKS (200 / SCAN_TICK_US)
 
