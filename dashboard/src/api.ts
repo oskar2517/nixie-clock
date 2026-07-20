@@ -41,6 +41,24 @@ export interface TimerIntervalResponse {
     tubesOnMinutes: number;
 }
 
+export interface AdvancedConfig {
+    ntpServer: string;
+    ntpFrequency: number;
+    healingMode: boolean;
+}
+
+export interface NtpServerResponse {
+    server: string;
+}
+
+export interface NtpFrequencyResponse {
+    frequency: number;
+}
+
+export interface HealingModeResponse {
+    healingMode: boolean;
+}
+
 function createRequest(method: "POST" | "GET" | "DELETE", route: string, body?: string): Promise<Response> {
     if (body) {
         return fetch(route, {
@@ -152,7 +170,7 @@ export async function setTimer(timer: boolean): Promise<TimerResponse> {
     }));
 
     if (!response.ok) {
-        throw new Error("Failed to enable timer");
+        throw new Error("Failed to toggle timer");
     }
 
     return await response.json();
@@ -173,6 +191,48 @@ export async function setTimerInterval(
 
     if (!response.ok) {
         throw new Error("Failed to update timer interval");
+    }
+
+    return await response.json();
+}
+
+export async function getAdvancedConfig(): Promise<AdvancedConfig> {
+    const response = await createRequest("GET", "/api/config/advanced");
+
+    return await response.json();
+}
+
+export async function setNtpServer(server: string): Promise<NtpServerResponse> {
+    const response = await createRequest("POST", "/api/config/advanced/ntp_server", JSON.stringify({
+        server
+    }));
+
+    if (!response.ok) {
+        throw new Error("Failed to update NTP server");
+    }
+
+    return await response.json();
+}
+
+export async function setNtpFrequency(frequency: number): Promise<NtpFrequencyResponse> {
+    const response = await createRequest("POST", "/api/config/advanced/ntp_frequency", JSON.stringify({
+        frequency
+    }));
+
+    if (!response.ok) {
+        throw new Error("Failed to update NTP frequency");
+    }
+
+    return await response.json();
+}
+
+export async function setHealingMode(healingMode: boolean): Promise<HealingModeResponse> {
+    const response = await createRequest("POST", "/api/config/advanced/healing_mode", JSON.stringify({
+        healingMode
+    }));
+
+    if (!response.ok) {
+        throw new Error("Failed to toggle healing mode");
     }
 
     return await response.json();

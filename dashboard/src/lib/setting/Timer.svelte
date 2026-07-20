@@ -46,7 +46,8 @@
 
     async function handleTimerEnabledChange(): Promise<void> {
         try {
-            await setTimer(timer);
+            const response = await setTimer(timer);
+            timer = response.timer;
             $notification = {
                 severity: "normal",
                 message: timer ? "Enabled timer" : "Disabled timer",

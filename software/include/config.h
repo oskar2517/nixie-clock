@@ -14,6 +14,9 @@ struct ClockConfig {
     uint8_t timer_tubes_off_minutes;
     uint8_t timer_tubes_on_hours;
     uint8_t timer_tubes_on_minutes;
+    String ntp_server;
+    uint16_t ntp_frequency;
+    bool healing_mode;
 };
 
 extern ClockConfig config;

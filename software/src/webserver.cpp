@@ -261,6 +261,70 @@ static void handle_timer_interval_post(JsonDocument& request) {
     send_json(200, response);
 }
 
+static void handle_advanced_get(JsonDocument& request) {
+    JsonDocument response;
+    response["ntpServer"] = config.ntp_server;
+    response["ntpFrequency"] = config.ntp_frequency;
+    response["healingMode"] = config.healing_mode;
+
+    send_json(200, response);
+}
+
+static void handle_ntp_server_post(JsonDocument& request) {
+    String ntp_server = request["server"];
+
+    if (!ntp_server) {
+        server.send(400);
+        return;
+    }
+
+    config.ntp_server = ntp_server;
+    if (!config_save()) {
+        server.send(500);
+        return;
+    }
+
+    JsonDocument response;
+    response["server"] = ntp_server;
+
+    send_json(200, response);
+}
+
+static void handle_ntp_frequency_post(JsonDocument& request) {
+    uint16_t ntp_frequency = request["frequency"];
+
+    if (ntp_frequency < 5) {
+        server.send(400);
+        return;
+    }
+
+    config.ntp_frequency = ntp_frequency;
+    if (!config_save()) {
+        server.send(500);
+        return;
+    }
+
+    JsonDocument response;
+    response["frequency"] = ntp_frequency;
+
+    send_json(200, response);
+}
+
+static void handle_healing_mode_post(JsonDocument& request) {
+    bool healing_mode = request["healingMode"];
+
+    config.healing_mode = healing_mode;
+    if (!config_save()) {
+        server.send(500);
+        return;
+    }
+
+    JsonDocument response;
+    response["healingMode"] = healing_mode;
+
+    send_json(200, response);
+}
+
 // TODO: Button to reset config
 static void setup_api() {
     on_api("/api/wifi", HTTP_POST, RequestBody::Json, handle_wifi_setup);
@@ -288,6 +352,18 @@ static void setup_api() {
 
     on_api("/api/config/timer/interval", HTTP_POST, RequestBody::Json,
            handle_timer_interval_post);
+
+    on_api("/api/config/advanced", HTTP_GET, RequestBody::None,
+           handle_advanced_get);
+
+    on_api("/api/config/advanced/ntp_server", HTTP_POST, RequestBody::Json,
+           handle_ntp_server_post);
+
+    on_api("/api/config/advanced/ntp_frequency", HTTP_POST, RequestBody::Json,
+           handle_ntp_frequency_post);
+
+    on_api("/api/config/advanced/healing_mode", HTTP_POST, RequestBody::Json,
+           handle_healing_mode_post);
 }
 
 void webserver_setup() {

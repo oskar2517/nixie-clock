@@ -24,6 +24,9 @@ static void set_default_config() {
     config.timer_tubes_off_minutes = 0;
     config.timer_tubes_on_hours = 9;
     config.timer_tubes_on_minutes = 0;
+    config.ntp_server = "pool.ntp.org";
+    config.ntp_frequency = 60;
+    config.healing_mode = false;
 }
 
 static void create_default_config() {
@@ -46,6 +49,9 @@ bool config_save() {
     COPY2DOC("timer_tubes_off_minutes", timer_tubes_off_minutes)
     COPY2DOC("timer_tubes_on_hours", timer_tubes_on_hours)
     COPY2DOC("timer_tubes_on_minutes", timer_tubes_on_minutes)
+    COPY2DOC("ntp_server", ntp_server);
+    COPY2DOC("ntp_frequency", ntp_frequency)
+    COPY2DOC("healing_mode", healing_mode)
 
     String serialized;
     size_t json_size = serializeJson(document, serialized);
@@ -107,6 +113,9 @@ void config_load() {
     COPY2CONF(timer_tubes_off_minutes, "timer_tubes_off_minutes")
     COPY2CONF(timer_tubes_on_hours, "timer_tubes_on_hours")
     COPY2CONF(timer_tubes_on_minutes, "timer_tubes_on_minutes")
+    COPY2CONF(ntp_server, "ntp_server")
+    COPY2CONF(ntp_frequency, "ntp_frequency")
+    COPY2CONF(healing_mode, "healing_mode")
 
     Serial.println("Loaded config file successfully");
 }

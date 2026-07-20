@@ -6,8 +6,6 @@
 #include "config.h"
 #include "wifi.h"
 
-#define NTP_SERVER "pool.ntp.org"
-
 static tm tm_from_datetime(const DateTime& datetime) {
     tm timeinfo = {};
     timeinfo.tm_year = datetime.year() - 1900;
@@ -65,9 +63,9 @@ bool rtc_ntp_fetch_time() {
     if (!wifi_connect_with_config_credentials()) return false;
 
     Serial.print("Fetching time from NTP server ");
-    Serial.println(NTP_SERVER);
+    Serial.println(config.ntp_server);
 
-    configTzTime(config.timezone_posix.c_str(), NTP_SERVER);
+    configTzTime(config.timezone_posix.c_str(), config.ntp_server.c_str());
 
     if (!adjust_rtc()) {
         wifi_disconnect();
