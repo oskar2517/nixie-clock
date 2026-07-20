@@ -258,7 +258,8 @@ void clock_update() {
         sync_neons_to_second_phase(second_started_ms);
     }
 
-    if (config.automatic_time && now_ms - last_ntp_update >= 1000 * 60 * config.ntp_frequency) {
+    if (config.automatic_time &&
+        now_ms - last_ntp_update >= 60000UL * config.ntp_frequency) {
         Serial.println("Setting time automatically...");
         last_ntp_update = now_ms;
 

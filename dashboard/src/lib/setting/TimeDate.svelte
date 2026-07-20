@@ -6,11 +6,9 @@
     import Button from "./settings/Button.svelte";
     import SwitchSetting from "./settings/SwitchSetting.svelte";
     import {
-        getTimeDateConfig,
-        setAutomaticTime,
-        setTimeDisplayFormat,
-        setTimezone,
+        getConfig,
         syncTime,
+        updateConfig,
     } from "../../api";
     import { convertIanaToPosix } from "../../util/posix_ts";
     import { onMount } from "svelte";
@@ -53,8 +51,11 @@
         }
 
         try {
-            const response = await setTimezone(timezonePosix, timezoneIana);
-            timezoneIana = response.iana;
+            const response = await updateConfig({
+                timezonePosix,
+                timezoneIana,
+            });
+            timezoneIana = response.timezoneIana;
             $notification = {
                 severity: "normal",
                 message: `Successully updated timezone to ${timezoneIana} (${timezonePosix})`,
@@ -72,8 +73,11 @@
 
         try {
             const format = timeDisplayFormat === "24-hour" ? 24 : 12;
-            const response = await setTimeDisplayFormat(format);
-            timeDisplayFormat = response.format === 24 ? "24-hour" : "12-hour";
+            const response = await updateConfig({
+                timeDisplayFormat: format,
+            });
+            timeDisplayFormat =
+                response.timeDisplayFormat === 24 ? "24-hour" : "12-hour";
             $notification = {
                 severity: "normal",
                 message: `Successfully changed time display format to ${timeDisplayFormat}`,
@@ -88,8 +92,10 @@
 
     async function handleAutomaticTimeChange() {
         try {
-            const response = await setAutomaticTime(automaticTime);
-            automaticTime = response.automatic;
+            const response = await updateConfig({
+                automaticTime,
+            });
+            automaticTime = response.automaticTime;
             $notification = {
                 severity: "normal",
                 message: automaticTime
@@ -105,7 +111,7 @@
     }
 
     onMount(async () => {
-        const config = await getTimeDateConfig();
+        const config = await getConfig();
         timezoneIana = config.timezoneIana;
         timeDisplayFormat =
             config.timeDisplayFormat === 24 ? "24-hour" : "12-hour";

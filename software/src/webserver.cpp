@@ -138,189 +138,40 @@ static void handle_time_set(JsonDocument& request) {
     }
 }
 
-static void handle_time_date_get(JsonDocument& request) {
+static void handle_config_get(JsonDocument& request) {
     JsonDocument response;
-    response["timeDisplayFormat"] = config.time_display_format;
-    response["timezonePosix"] = config.timezone_posix;
-    response["timezoneIana"] = config.timezone_iana;
-    response["automaticTime"] = config.automatic_time;
+    config_to_json(response);
 
     send_json(200, response);
 }
 
-static void handle_timezone_post(JsonDocument& request) {
-    const char* timezone_posix = request["posix"];
-    const char* timezone_iana = request["iana"];
-
-    if (!timezone_posix || !timezone_iana) {
-        server.send(400);
-        return;
+static bool apply_config_side_effects(const ClockConfig& next) {
+    if (next.timezone_posix != config.timezone_posix) {
+        if (!rtc_set_timezone(next.timezone_posix.c_str())) {
+            return false;
+        }
     }
 
-    if (!rtc_set_timezone(timezone_posix)) {
+    return true;
+}
+
+static void handle_config_post(JsonDocument& request) {
+    ClockConfig next = config;
+    config_apply_json(next, request);
+
+    if (!apply_config_side_effects(next)) {
         server.send(500);
         return;
     }
 
-    config.timezone_posix = timezone_posix;
-    config.timezone_iana = timezone_iana;
+    config = next;
     if (!config_save()) {
         server.send(500);
         return;
     }
 
     JsonDocument response;
-    response["posix"] = timezone_posix;
-    response["iana"] = timezone_iana;
-
-    send_json(200, response);
-}
-
-static void handle_time_display_format_post(JsonDocument& request) {
-    uint8_t time_display_format = request["format"];
-
-    if ((time_display_format != 12 && time_display_format != 24)) {
-        server.send(400);
-        return;
-    }
-
-    config.time_display_format = time_display_format;
-    if (!config_save()) {
-        server.send(500);
-        return;
-    }
-
-    JsonDocument response;
-    response["format"] = time_display_format;
-
-    send_json(200, response);
-}
-
-static void handle_automatic_time_post(JsonDocument& request) {
-    bool automatic = request["automatic"];
-
-    config.automatic_time = automatic;
-    if (!config_save()) {
-        server.send(500);
-        return;
-    }
-
-    JsonDocument response;
-    response["automatic"] = automatic;
-
-    send_json(200, response);
-}
-
-static void handle_timer_get(JsonDocument& request) {
-    JsonDocument response;
-    response["timer"] = config.timer;
-    response["tubesOffHours"] = config.timer_tubes_off_hours;
-    response["tubesOffMinutes"] = config.timer_tubes_off_minutes;
-    response["tubesOnHours"] = config.timer_tubes_on_hours;
-    response["tubesOnMinutes"] = config.timer_tubes_on_minutes;
-
-    send_json(200, response);
-}
-
-static void handle_timer_enabled_post(JsonDocument& request) {
-    bool timer = request["timer"];
-
-    config.timer = timer;
-    if (!config_save()) {
-        server.send(500);
-        return;
-    }
-
-    JsonDocument response;
-    response["timer"] = timer;
-
-    send_json(200, response);
-}
-
-static void handle_timer_interval_post(JsonDocument& request) {
-    uint8_t off_hours = request["tubesOffHours"];
-    uint8_t off_minutes = request["tubesOffMinutes"];
-    uint8_t on_hours = request["tubesOnHours"];
-    uint8_t on_minutes = request["tubesOnMinutes"];
-
-    config.timer_tubes_off_hours = off_hours;
-    config.timer_tubes_off_minutes = off_minutes;
-    config.timer_tubes_on_hours = on_hours;
-    config.timer_tubes_on_minutes = on_minutes;
-    if (!config_save()) {
-        server.send(500);
-        return;
-    }
-
-    JsonDocument response;
-    response["tubesOffHours"] = off_hours;
-    response["tubesOffMinutes"] = off_minutes;
-    response["tubesOnHours"] = on_hours;
-    response["tubesOnMinutes"] = on_minutes;
-
-    send_json(200, response);
-}
-
-static void handle_advanced_get(JsonDocument& request) {
-    JsonDocument response;
-    response["ntpServer"] = config.ntp_server;
-    response["ntpFrequency"] = config.ntp_frequency;
-    response["healingMode"] = config.healing_mode;
-
-    send_json(200, response);
-}
-
-static void handle_ntp_server_post(JsonDocument& request) {
-    String ntp_server = request["server"];
-
-    if (!ntp_server) {
-        server.send(400);
-        return;
-    }
-
-    config.ntp_server = ntp_server;
-    if (!config_save()) {
-        server.send(500);
-        return;
-    }
-
-    JsonDocument response;
-    response["server"] = ntp_server;
-
-    send_json(200, response);
-}
-
-static void handle_ntp_frequency_post(JsonDocument& request) {
-    uint16_t ntp_frequency = request["frequency"];
-
-    if (ntp_frequency < 5) {
-        server.send(400);
-        return;
-    }
-
-    config.ntp_frequency = ntp_frequency;
-    if (!config_save()) {
-        server.send(500);
-        return;
-    }
-
-    JsonDocument response;
-    response["frequency"] = ntp_frequency;
-
-    send_json(200, response);
-}
-
-static void handle_healing_mode_post(JsonDocument& request) {
-    bool healing_mode = request["healingMode"];
-
-    config.healing_mode = healing_mode;
-    if (!config_save()) {
-        server.send(500);
-        return;
-    }
-
-    JsonDocument response;
-    response["healingMode"] = healing_mode;
+    config_to_json(response);
 
     send_json(200, response);
 }
@@ -333,37 +184,8 @@ static void setup_api() {
 
     on_api("/api/time", HTTP_POST, RequestBody::Json, handle_time_set);
 
-    on_api("/api/config/time_date", HTTP_GET, RequestBody::None,
-           handle_time_date_get);
-
-    on_api("/api/config/time_date/timezone", HTTP_POST, RequestBody::Json,
-           handle_timezone_post);
-
-    on_api("/api/config/time_date/time_display_format", HTTP_POST,
-           RequestBody::Json, handle_time_display_format_post);
-
-    on_api("/api/config/time_date/automatic_time", HTTP_POST, RequestBody::Json,
-           handle_automatic_time_post);
-
-    on_api("/api/config/timer", HTTP_GET, RequestBody::None, handle_timer_get);
-
-    on_api("/api/config/timer/timer", HTTP_POST, RequestBody::Json,
-           handle_timer_enabled_post);
-
-    on_api("/api/config/timer/interval", HTTP_POST, RequestBody::Json,
-           handle_timer_interval_post);
-
-    on_api("/api/config/advanced", HTTP_GET, RequestBody::None,
-           handle_advanced_get);
-
-    on_api("/api/config/advanced/ntp_server", HTTP_POST, RequestBody::Json,
-           handle_ntp_server_post);
-
-    on_api("/api/config/advanced/ntp_frequency", HTTP_POST, RequestBody::Json,
-           handle_ntp_frequency_post);
-
-    on_api("/api/config/advanced/healing_mode", HTTP_POST, RequestBody::Json,
-           handle_healing_mode_post);
+    on_api("/api/config", HTTP_GET, RequestBody::None, handle_config_get);
+    on_api("/api/config", HTTP_POST, RequestBody::Json, handle_config_post);
 }
 
 void webserver_setup() {

@@ -3,12 +3,7 @@
     import SettingGroup from "./settings/SettingGroup.svelte";
     import SwitchSetting from "./settings/SwitchSetting.svelte";
     import TextInputSetting from "./settings/TextInputSetting.svelte";
-    import {
-        getAdvancedConfig,
-        setHealingMode,
-        setNtpFrequency,
-        setNtpServer,
-    } from "../../api";
+    import { getConfig, updateConfig } from "../../api";
     import { notification } from "./common/notification_store";
 
     let ntpServer = $state("");
@@ -16,7 +11,7 @@
     let healingMode = $state(false);
 
     onMount(async () => {
-        const config = await getAdvancedConfig();
+        const config = await getConfig();
 
         ntpServer = config.ntpServer;
         ntpFrequency = config.ntpFrequency.toString();
@@ -27,8 +22,10 @@
         if (ntpServer === "") return;
 
         try {
-            const response = await setNtpServer(ntpServer);
-            ntpServer = response.server;
+            const response = await updateConfig({
+                ntpServer,
+            });
+            ntpServer = response.ntpServer;
             $notification = {
                 severity: "normal",
                 message: `Set NTP server to ${ntpServer}`,
@@ -45,8 +42,10 @@
         if (ntpFrequency === "") return;
 
         try {
-            const response = await setNtpFrequency(parseInt(ntpFrequency));
-            ntpFrequency = response.frequency.toString();
+            const response = await updateConfig({
+                ntpFrequency: parseInt(ntpFrequency),
+            });
+            ntpFrequency = response.ntpFrequency.toString();
             $notification = {
                 severity: "normal",
                 message: `Set NTP sychronization frequency to ${ntpFrequency} minutes`,
@@ -61,7 +60,9 @@
 
     async function handleHealingModeChange() {
         try {
-            const response = await setHealingMode(healingMode);
+            const response = await updateConfig({
+                healingMode,
+            });
             healingMode = response.healingMode;
             $notification = {
                 severity: "normal",

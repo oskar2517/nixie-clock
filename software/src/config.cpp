@@ -5,9 +5,27 @@
 
 #define CONFIG_FILE "/config.json"
 
-#define COPY2CONF(conf_name, doc_name) \
-    config.conf_name = document[doc_name] | config.conf_name;
-#define COPY2DOC(doc_name, conf_name) document[doc_name] = config.conf_name;
+#define CONFIG_SECRET_FIELDS(FIELD) \
+    FIELD(wifi_ssid, "wifiSsid")    \
+    FIELD(wifi_password, "wifiPassword")
+
+#define CONFIG_PUBLIC_FIELDS(FIELD)                              \
+    FIELD(timezone_posix, "timezonePosix")                       \
+    FIELD(timezone_iana, "timezoneIana")                         \
+    FIELD(time_display_format, "timeDisplayFormat")              \
+    FIELD(automatic_time, "automaticTime")                       \
+    FIELD(timer, "timer")                                        \
+    FIELD(timer_tubes_off_hours, "tubesOffHours")                \
+    FIELD(timer_tubes_off_minutes, "tubesOffMinutes")            \
+    FIELD(timer_tubes_on_hours, "tubesOnHours")                  \
+    FIELD(timer_tubes_on_minutes, "tubesOnMinutes")              \
+    FIELD(ntp_server, "ntpServer")                               \
+    FIELD(ntp_frequency, "ntpFrequency")                         \
+    FIELD(healing_mode, "healingMode")
+
+#define COPY2CONF(conf_name, doc_name) target.conf_name = document[doc_name] | target.conf_name;
+
+#define COPY2DOC(conf_name, doc_name) document[doc_name] = source.conf_name;
 
 ClockConfig config;
 
@@ -34,24 +52,29 @@ static void create_default_config() {
     Serial.println("Created default config");
 }
 
+static void config_to_json(const ClockConfig& source, JsonDocument& document,
+                           bool include_secrets) {
+    if (include_secrets) {
+        CONFIG_SECRET_FIELDS(COPY2DOC)
+    }
+
+    CONFIG_PUBLIC_FIELDS(COPY2DOC)
+}
+
+static void config_apply_json(ClockConfig& target, JsonDocument& document,
+                              bool include_secrets) {
+    if (include_secrets) {
+        CONFIG_SECRET_FIELDS(COPY2CONF)
+    }
+
+    CONFIG_PUBLIC_FIELDS(COPY2CONF)
+}
+
 bool config_save() {
     Serial.println("Saving config file to LittleFS...");
 
     JsonDocument document;
-    COPY2DOC("wifi_ssid", wifi_ssid)
-    COPY2DOC("wifi_password", wifi_password)
-    COPY2DOC("timezone_posix", timezone_posix)
-    COPY2DOC("timezone_iana", timezone_iana)
-    COPY2DOC("time_display_format", time_display_format)
-    COPY2DOC("automatic_time", automatic_time)
-    COPY2DOC("timer", timer)
-    COPY2DOC("timer_tubes_off_hours", timer_tubes_off_hours)
-    COPY2DOC("timer_tubes_off_minutes", timer_tubes_off_minutes)
-    COPY2DOC("timer_tubes_on_hours", timer_tubes_on_hours)
-    COPY2DOC("timer_tubes_on_minutes", timer_tubes_on_minutes)
-    COPY2DOC("ntp_server", ntp_server);
-    COPY2DOC("ntp_frequency", ntp_frequency)
-    COPY2DOC("healing_mode", healing_mode)
+    config_to_json(config, document, true);
 
     String serialized;
     size_t json_size = serializeJson(document, serialized);
@@ -79,6 +102,14 @@ bool config_save() {
     return true;
 }
 
+void config_to_json(JsonDocument& document) {
+    config_to_json(config, document, false);
+}
+
+void config_apply_json(ClockConfig& target, JsonDocument& document) {
+    config_apply_json(target, document, false);
+}
+
 void config_load() {
     Serial.println("Loading config file from LittleFS...");
 
@@ -101,21 +132,7 @@ void config_load() {
     }
 
     set_default_config();
-
-    COPY2CONF(wifi_ssid, "wifi_ssid")
-    COPY2CONF(wifi_password, "wifi_password")
-    COPY2CONF(timezone_posix, "timezone_posix")
-    COPY2CONF(timezone_iana, "timezone_iana")
-    COPY2CONF(time_display_format, "time_display_format")
-    COPY2CONF(automatic_time, "automatic_time")
-    COPY2CONF(timer, "timer")
-    COPY2CONF(timer_tubes_off_hours, "timer_tubes_off_hours")
-    COPY2CONF(timer_tubes_off_minutes, "timer_tubes_off_minutes")
-    COPY2CONF(timer_tubes_on_hours, "timer_tubes_on_hours")
-    COPY2CONF(timer_tubes_on_minutes, "timer_tubes_on_minutes")
-    COPY2CONF(ntp_server, "ntp_server")
-    COPY2CONF(ntp_frequency, "ntp_frequency")
-    COPY2CONF(healing_mode, "healing_mode")
+    config_apply_json(config, document, true);
 
     Serial.println("Loaded config file successfully");
 }

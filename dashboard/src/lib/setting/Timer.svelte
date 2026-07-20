@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { getTimerConfig, setTimer, setTimerInterval } from "../../api";
+    import { getConfig, updateConfig } from "../../api";
     import { notification } from "./common/notification_store";
     import SettingGroup from "./settings/SettingGroup.svelte";
     import SwitchSetting from "./settings/SwitchSetting.svelte";
@@ -26,12 +26,14 @@
         const [tubesOnHours, tubesOnMinutes] = splitTime(tubesOnTime);
 
         try {
-            await setTimerInterval(
+            const response = await updateConfig({
                 tubesOffHours,
                 tubesOffMinutes,
                 tubesOnHours,
                 tubesOnMinutes,
-            );
+            });
+            tubesOffTime = joinTime(response.tubesOffHours, response.tubesOffMinutes);
+            tubesOnTime = joinTime(response.tubesOnHours, response.tubesOnMinutes);
             $notification = {
                 severity: "normal",
                 message: `Set timer interval to ${tubesOffTime} - ${tubesOnTime}.`,
@@ -46,7 +48,9 @@
 
     async function handleTimerEnabledChange(): Promise<void> {
         try {
-            const response = await setTimer(timer);
+            const response = await updateConfig({
+                timer,
+            });
             timer = response.timer;
             $notification = {
                 severity: "normal",
@@ -61,7 +65,7 @@
     }
 
     onMount(async () => {
-        const config = await getTimerConfig();
+        const config = await getConfig();
 
         timer = config.timer;
         tubesOffTime = joinTime(config.tubesOffHours, config.tubesOffMinutes);

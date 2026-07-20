@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include <ArduinoJson.h>
 
 struct ClockConfig {
     String wifi_ssid;
@@ -24,3 +25,7 @@ extern ClockConfig config;
 void config_load();
 
 bool config_save();
+
+void config_to_json(JsonDocument& document);
+
+void config_apply_json(ClockConfig& target, JsonDocument& document);
