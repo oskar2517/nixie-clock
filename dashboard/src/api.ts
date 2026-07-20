@@ -30,7 +30,11 @@ export interface TimerConfig {
     tubesOnMinutes: number;
 }
 
-interface TimerIntervalResponse {
+export interface TimerResponse {
+    timer: boolean;
+}
+
+export interface TimerIntervalResponse {
     tubesOffHours: number;
     tubesOffMinutes: number;
     tubesOnHours: number;
@@ -142,7 +146,7 @@ export async function getTimerConfig(): Promise<TimerConfig> {
     return await response.json();
 }
 
-export async function setTimer(timer: boolean): Promise<AutomaticTimeResponse> {
+export async function setTimer(timer: boolean): Promise<TimerResponse> {
     const response = await createRequest("POST", "/api/config/timer/timer", JSON.stringify({
         timer
     }));
@@ -159,7 +163,7 @@ export async function setTimerInterval(
     tubesOffMinutes: number,
     tubesOnHours: number,
     tubesOnMinutes: number
-): Promise<AutomaticTimeResponse> {
+): Promise<TimerIntervalResponse> {
     const response = await createRequest("POST", "/api/config/timer/interval", JSON.stringify({
         tubesOffHours,
         tubesOffMinutes,
