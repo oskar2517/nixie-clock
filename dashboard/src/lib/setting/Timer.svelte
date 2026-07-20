@@ -15,7 +15,11 @@
         return time.split(":").map((n) => parseInt(n));
     }
 
-    async function handleIntervalChange() {
+    function joinTime(hours: number, minutes: number): string {
+        return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
+    }
+
+    async function handleIntervalChange(): Promise<void> {
         if (!tubesOffTime || !tubesOnTime) return;
 
         const [tubesOffHours, tubesOffMinutes] = splitTime(tubesOffTime);
@@ -40,7 +44,7 @@
         }
     }
 
-    async function handleTimerEnabledChange() {
+    async function handleTimerEnabledChange(): Promise<void> {
         try {
             await setTimer(timer);
             $notification = {
@@ -59,8 +63,8 @@
         const config = await getTimerConfig();
 
         timer = config.timer;
-        tubesOffTime = `${config.tubesOffHours}:${config.tubesOffMinutes}`;
-        tubesOffTime = `${config.tubesOnHours}:${config.tubesOnMinutes}`;
+        tubesOffTime = joinTime(config.tubesOffHours, config.tubesOffMinutes);
+        tubesOnTime = joinTime(config.tubesOnHours, config.tubesOnMinutes);
     });
 </script>
 
