@@ -16,6 +16,7 @@ export interface ClockConfig {
     ntpFrequency: number;
     healingMode: boolean;
     neonsMode: number;
+    acpRoutine: number;
 }
 
 export type ClockConfigUpdate = Partial<ClockConfig>;

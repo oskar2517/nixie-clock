@@ -5,22 +5,20 @@
     import { getConfig, updateConfig } from "../../api";
     import { notification } from "./common/notification_store";
 
-    const neonsModes = new Map([
-        ["Disabled", 0],
-        ["Blink", 1],
-        ["Toggle", 2],
-    ]);
+    const neonsModes = ["Disabled", "Blink", "Toggle"];
+    const acpRoutines = ["Basic", "Sweep", "Additive"];
 
     let neonsMode = $state("");
+    let acpRoutine = $state("");
 
     async function handleNeonsModeChange() {
-        let neonsModeNumber = neonsModeNameToNumber(neonsMode);
+        let neonsModeNumber = neonsModes.indexOf(neonsMode);
 
         try {
             const response = await updateConfig({
                 neonsMode: neonsModeNumber,
             });
-            neonsMode = neonsModeNumberToName(response.neonsMode);
+            neonsMode = neonsModes[response.neonsMode];
             $notification = {
                 severity: "normal",
                 message: `Set neons mode to ${neonsMode}`,
@@ -33,24 +31,37 @@
         }
     }
 
-    function neonsModeNumberToName(n: number): string {
-        return [...neonsModes].find(([_, value]) => value === n)!![0];
-    }
+    async function handleacpRoutineChange() {
+        let acpRoutineNumber = acpRoutines.indexOf(acpRoutine);
 
-    function neonsModeNameToNumber(s: string): number {
-        return neonsModes.get(s)!!;
+        try {
+            const response = await updateConfig({
+                acpRoutine: acpRoutineNumber,
+            });
+            acpRoutine = acpRoutines[response.acpRoutine];
+            $notification = {
+                severity: "normal",
+                message: `Set ACP mode to ${acpRoutine}`,
+            };
+        } catch (err: any) {
+            $notification = {
+                severity: "error",
+                message: err.toString(),
+            };
+        }
     }
 
     onMount(async () => {
         const config = await getConfig();
-        neonsMode = neonsModeNumberToName(config.neonsMode);
+        neonsMode = neonsModes[config.neonsMode];
+        acpRoutine = acpRoutines[config.acpRoutine];
     });
 </script>
 
 <SettingGroup title="Display">
     <SelectSetting
         name="Seconds Neons Pattern"
-        options={["Blink", "Toggle", "Disabled"]}
+        options={neonsModes}
         bind:value={neonsMode}
         onchange={handleNeonsModeChange}
         description="Behavior of the neon bulbs indicating seconds."
@@ -58,8 +69,9 @@
 
     <SelectSetting
         name="Anti Cathode Poisoning Routine"
-        options={["Slot machine", "From left ro right"]}
-        value="Slot machine"
+        options={acpRoutines}
+        bind:value={acpRoutine}
+        onchange={handleacpRoutineChange}
         description="Animation style of the anti cathode poisoning routine."
     ></SelectSetting>
 </SettingGroup>

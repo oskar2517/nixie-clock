@@ -22,7 +22,8 @@
     FIELD(ntp_server, "ntpServer")                               \
     FIELD(ntp_frequency, "ntpFrequency")                         \
     FIELD(healing_mode, "healingMode")                           \
-    FIELD(neons_mode, "neonsMode")
+    FIELD(neons_mode, "neonsMode")                               \
+    FIELD(acp_routine, "acpRoutine")
 
 #define COPY2CONF(conf_name, doc_name) target.conf_name = document[doc_name] | target.conf_name;
 
@@ -47,6 +48,7 @@ static void set_default_config() {
     config.ntp_frequency = 60;
     config.healing_mode = false;
     config.neons_mode = CFG_NEONS_MODE_BLINK;
+    config.acp_routine = 1;
 }
 
 static void create_default_config() {

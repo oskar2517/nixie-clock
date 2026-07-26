@@ -1,4 +1,5 @@
 #include "RTClib.h"
+#include "acp.h"
 #include "config.h"
 #include "main.h"
 #include "pins.h"
@@ -22,33 +23,47 @@
 // RTC config
 #define RTC_READ_INTERVAL_MS 50
 
-static const uint8_t digit_count = sizeof(anode_pins) / sizeof(anode_pins[0]);
+extern const uint8_t clock_digit_count = sizeof(anode_pins) / sizeof(anode_pins[0]);
 
 static hw_timer_t* scan_timer = nullptr;
 static portMUX_TYPE display_mux = portMUX_INITIALIZER_UNLOCKED;
 
-static volatile uint8_t display_digits[digit_count] = {};
+static volatile uint8_t display_digits[clock_digit_count] = {};
 
 RTC_DS3231 rtc;
 static bool rtc_available = false;
 
 static bool acp_routine_running = false;
 
-static void set_display(uint32_t value) {
-    uint8_t digits[digit_count];
+void clock_get_display_digits(uint8_t* digits) {
+    portENTER_CRITICAL(&display_mux);
+    for (uint8_t i = 0; i < clock_digit_count; i++) {
+        digits[i] = display_digits[i];
+    }
+    portEXIT_CRITICAL(&display_mux);
+}
 
-    for (int i = 0; i < digit_count; i++) {
+void clock_set_display_digits(const uint8_t* digits) {
+    portENTER_CRITICAL(&display_mux);
+    for (uint8_t i = 0; i < clock_digit_count; i++) {
+        display_digits[i] = digits[i];
+    }
+    portEXIT_CRITICAL(&display_mux);
+}
+
+void clock_set_display(uint32_t value) {
+    uint8_t digits[clock_digit_count];
+
+    for (int i = 0; i < clock_digit_count; i++) {
         int digit = value % 10;
         digits[i] = digit;
         value /= 10;
     }
 
-    portENTER_CRITICAL(&display_mux);
-    for (uint8_t i = 0; i < digit_count; i++) {
-        display_digits[i] = digits[i];
-    }
-    portEXIT_CRITICAL(&display_mux);
+    clock_set_display_digits(digits);
 }
+
+void clock_stop_acp_routine() { acp_routine_running = false; }
 
 static void IRAM_ATTR scan_isr() {
     enum ScanPhase : uint8_t {
@@ -98,7 +113,7 @@ static void IRAM_ATTR scan_isr() {
 
         case NEXT_DIGIT:
             if (--phase_ticks == 0) {
-                active_anode = (active_anode + 1) % digit_count;
+                active_anode = (active_anode + 1) % clock_digit_count;
                 phase = SET_CATHODE;
             }
             break;
@@ -202,7 +217,7 @@ static void init_rtc() {
     rtc_available = rtc.begin(&Wire);
     if (!rtc_available) {
         Serial.println("DS3231 not found");
-        set_display(999999);
+        clock_set_display(999999);
         return;
     }
 
@@ -211,33 +226,19 @@ static void init_rtc() {
     }
 
     DateTime now = rtc.now();
-    set_display(time_display_value(now));
+    clock_set_display(time_display_value(now));
     sync_neons(now, millis());
 }
 
-static void anti_cathode_poisoning_routine() {
-    if (!acp_routine_running) return;
-
-    static uint32_t last_step_millis = millis();
-    static uint8_t step = 0;
-
-    if (millis() - last_step_millis < 100) return;
-    last_step_millis = millis();
-
-    if (step < 20) {
-        uint32_t n = (step % 10) * 111111;
-
-        set_display(n);
-
-        step++;
-    } else {
-        acp_routine_running = false;
-        step = 0;
-    }
-}
-
 void clock_update() {
-    anti_cathode_poisoning_routine();
+    if (acp_routine_running) {
+        uint8_t routine = config.acp_routine;
+        if (routine >= acp_routine_count) {
+            routine = 0;
+        }
+
+        acp_routines[routine].run();
+    }
 
     if (acp_routine_running) return;
 
@@ -263,7 +264,7 @@ void clock_update() {
         if (now_s != last_second) {
             last_second = now.second();
             second_started_ms = now_ms;
-            set_display(time_display_value(now));
+            clock_set_display(time_display_value(now));
         }
 
         if (now_s == 0) {
@@ -285,7 +286,7 @@ void clock_update() {
 }
 
 void clock_setup() {
-    setup_pins(anode_pins, digit_count);
+    setup_pins(anode_pins, clock_digit_count);
     setup_pins(cathode_pins, 10);
     setup_neon_pwm();
 
