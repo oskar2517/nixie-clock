@@ -6,7 +6,7 @@
     import { notification } from "./common/notification_store";
 
     const neonsModes = ["Disabled", "Blink", "Toggle"];
-    const acpRoutines = ["Basic", "Sweep", "Additive"];
+    const acpRoutines = ["Basic", "Sweep", "Additive", "Slot Machine"];
 
     let neonsMode = $state("");
     let acpRoutine = $state("");

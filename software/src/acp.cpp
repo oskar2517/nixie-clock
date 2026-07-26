@@ -5,6 +5,9 @@
 #include "clock.h"
 
 #define ACP_STEP_INTERVAL_MS 50
+#define ACP_DIGIT_VALUES 10
+#define ACP_MAX_DIGITS 8
+#define ACP_SLOT_STEPS_PER_DIGIT ACP_DIGIT_VALUES
 
 static void anti_cathode_poisoning_routine_basic() {
     static uint32_t last_step_millis = millis();
@@ -87,8 +90,53 @@ static void anti_cathode_poisoning_routine_additive() {
     }
 }
 
-const AcpRoutine acp_routines[] = {{anti_cathode_poisoning_routine_basic},
-                                   {anti_cathode_poisoning_routine_sweep},
-                                   {anti_cathode_poisoning_routine_additive}};
+static void anti_cathode_poisoning_routine_slot_machine() {
+    static uint32_t last_step_millis = millis();
+    static uint8_t step = 0;
+    static uint8_t target_digits[ACP_MAX_DIGITS];
+    static bool started = false;
+    static bool left_to_right = true;
 
-const uint8_t acp_routine_count = sizeof(acp_routines) / sizeof(acp_routines[0]);
+    if (!started) {
+        clock_get_display_digits(target_digits);
+        step = 0;
+        started = true;
+    }
+
+    if (millis() - last_step_millis < ACP_STEP_INTERVAL_MS) return;
+    last_step_millis = millis();
+
+    uint8_t locked_digits = step / ACP_SLOT_STEPS_PER_DIGIT;
+
+    if (locked_digits >= clock_digit_count) {
+        clock_set_display_digits(target_digits);
+        clock_stop_acp_routine();
+        started = false;
+        left_to_right = !left_to_right;
+        return;
+    }
+
+    uint8_t digits[clock_digit_count];
+
+    for (uint8_t i = 0; i < clock_digit_count; i++) {
+        uint8_t digit_index = left_to_right ? clock_digit_count - i - 1 : i;
+
+        if (i < locked_digits) {
+            digits[digit_index] = target_digits[digit_index];
+        } else {
+            digits[digit_index] = (step + digit_index * 3) % ACP_DIGIT_VALUES;
+        }
+    }
+
+    clock_set_display_digits(digits);
+    step++;
+}
+
+const AcpRoutine acp_routines[] = {
+    {anti_cathode_poisoning_routine_basic},
+    {anti_cathode_poisoning_routine_sweep},
+    {anti_cathode_poisoning_routine_additive},
+    {anti_cathode_poisoning_routine_slot_machine}};
+
+const uint8_t acp_routine_count =
+    sizeof(acp_routines) / sizeof(acp_routines[0]);
