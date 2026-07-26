@@ -21,7 +21,8 @@
     FIELD(timer_tubes_on_minutes, "tubesOnMinutes")              \
     FIELD(ntp_server, "ntpServer")                               \
     FIELD(ntp_frequency, "ntpFrequency")                         \
-    FIELD(healing_mode, "healingMode")
+    FIELD(healing_mode, "healingMode")                           \
+    FIELD(neons_mode, "neonsMode")
 
 #define COPY2CONF(conf_name, doc_name) target.conf_name = document[doc_name] | target.conf_name;
 
@@ -45,6 +46,7 @@ static void set_default_config() {
     config.ntp_server = "pool.ntp.org";
     config.ntp_frequency = 60;
     config.healing_mode = false;
+    config.neons_mode = CFG_NEONS_MODE_BLINK;
 }
 
 static void create_default_config() {

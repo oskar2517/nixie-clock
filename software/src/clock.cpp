@@ -167,10 +167,25 @@ static void set_neons_enabled(bool enabled) {
     ledcWrite(NEON_PWM_CHANNEL_2, duty);
 }
 
-static void sync_neons_to_second_phase(uint32_t second_started_ms) {
+static bool neons_should_be_enabled(const DateTime& now,
+                                    uint32_t second_started_ms) {
     uint32_t elapsed_ms = millis() - second_started_ms;
 
-    set_neons_enabled(elapsed_ms < NEON_HALF_PERIOD_MS);
+    switch (config.neons_mode) {
+        case CFG_NEONS_MODE_BLINK:
+            return elapsed_ms < NEON_HALF_PERIOD_MS;
+
+        case CFG_NEONS_MODE_TOGGLE:
+            return now.second() % 2 == 0;
+
+        case CFG_NEONS_MODE_DISABLED:
+        default:
+            return false;
+    }
+}
+
+static void sync_neons(const DateTime& now, uint32_t second_started_ms) {
+    set_neons_enabled(neons_should_be_enabled(now, second_started_ms));
 }
 
 static void setup_neon_pwm() {
@@ -197,7 +212,7 @@ static void init_rtc() {
 
     DateTime now = rtc.now();
     set_display(time_display_value(now));
-    sync_neons_to_second_phase(millis());
+    sync_neons(now, millis());
 }
 
 static void anti_cathode_poisoning_routine() {
@@ -255,7 +270,7 @@ void clock_update() {
             acp_routine_running = true;
         }
 
-        sync_neons_to_second_phase(second_started_ms);
+        sync_neons(now, second_started_ms);
     }
 
     if (config.automatic_time &&

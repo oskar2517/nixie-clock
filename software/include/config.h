@@ -3,6 +3,10 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 
+#define CFG_NEONS_MODE_DISABLED 0
+#define CFG_NEONS_MODE_BLINK 1
+#define CFG_NEONS_MODE_TOGGLE 2
+
 struct ClockConfig {
     String wifi_ssid;
     String wifi_password;
@@ -18,6 +22,7 @@ struct ClockConfig {
     String ntp_server;
     uint16_t ntp_frequency;
     bool healing_mode;
+    uint8_t neons_mode;
 };
 
 extern ClockConfig config;
