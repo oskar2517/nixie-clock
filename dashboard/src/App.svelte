@@ -6,10 +6,20 @@
     import TimeDate from "./lib/setting/TimeDate.svelte";
     import Timer from "./lib/setting/Timer.svelte";
     import Notification from "./lib/setting/common/Notification.svelte";
+    import { onMount } from "svelte";
+    import { getFirmware } from "./api";
+
+    let firmwareVersion = $state("");
+
+    onMount(async () => {
+        firmwareVersion = (await getFirmware()).version;
+    });
 </script>
 
 <div class="main">
     <NixieClock />
+
+    <p>Running firmware version {firmwareVersion}</p>
 
     <Connectivity />
 

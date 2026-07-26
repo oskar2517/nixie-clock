@@ -5,11 +5,12 @@
 
 #include <functional>
 
+#include "clock.h"
 #include "config.h"
 #include "filesystem.h"
+#include "main.h"
 #include "rtc.h"
 #include "wifi.h"
-#include "clock.h"
 
 #define BASE_PATH "/dashboard/"
 
@@ -183,6 +184,13 @@ static void handle_acp_test_post(JsonDocument& request) {
     server.send(204);
 }
 
+static void handle_firmware_get(JsonDocument& request) {
+    JsonDocument response;
+    response["version"] = FIRMWARE_VERSION;
+
+    send_json(200, response);
+}
+
 // TODO: Button to reset config
 static void setup_api() {
     on_api("/api/wifi", HTTP_POST, RequestBody::Json, handle_wifi_setup);
@@ -195,6 +203,8 @@ static void setup_api() {
     on_api("/api/config", HTTP_POST, RequestBody::Json, handle_config_post);
 
     on_api("/api/acp_test", HTTP_POST, RequestBody::None, handle_acp_test_post);
+
+    on_api("/api/firmware", HTTP_GET, RequestBody::None, handle_firmware_get);
 }
 
 void webserver_setup() {

@@ -21,6 +21,10 @@ export interface ClockConfig {
 
 export type ClockConfigUpdate = Partial<ClockConfig>;
 
+export interface Firmware {
+    version: string;
+}
+
 function createRequest(method: "POST" | "GET" | "DELETE", route: string, body?: string): Promise<Response> {
     if (body) {
         return fetch(route, {
@@ -103,4 +107,10 @@ export async function runAcpRoutine(): Promise<void> {
     if (!response.ok) {
         throw new Error("Failed to run ACP routine");
     }
+}
+
+export async function getFirmware(): Promise<Firmware> {
+    const response = await createRequest("GET", "/api/firmware");
+
+    return response.json();
 }

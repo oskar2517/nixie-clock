@@ -1,3 +1,5 @@
 #pragma once
 
+#define FIRMWARE_VERSION "1.0.0"
+
 void set_hv_enabled(bool enabled);
