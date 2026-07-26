@@ -9,6 +9,7 @@
 #include "filesystem.h"
 #include "rtc.h"
 #include "wifi.h"
+#include "clock.h"
 
 #define BASE_PATH "/dashboard/"
 
@@ -176,6 +177,12 @@ static void handle_config_post(JsonDocument& request) {
     send_json(200, response);
 }
 
+static void handle_acp_test_post(JsonDocument& request) {
+    clock_start_acp_routine();
+
+    server.send(204);
+}
+
 // TODO: Button to reset config
 static void setup_api() {
     on_api("/api/wifi", HTTP_POST, RequestBody::Json, handle_wifi_setup);
@@ -186,6 +193,8 @@ static void setup_api() {
 
     on_api("/api/config", HTTP_GET, RequestBody::None, handle_config_get);
     on_api("/api/config", HTTP_POST, RequestBody::Json, handle_config_post);
+
+    on_api("/api/acp_test", HTTP_POST, RequestBody::None, handle_acp_test_post);
 }
 
 void webserver_setup() {

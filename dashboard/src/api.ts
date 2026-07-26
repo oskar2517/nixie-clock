@@ -96,3 +96,11 @@ export async function updateConfig(update: ClockConfigUpdate): Promise<ClockConf
 
     return await response.json();
 }
+
+export async function runAcpRoutine(): Promise<void> {
+    const response = await createRequest("POST", "/api/acp_test");
+
+    if (!response.ok) {
+        throw new Error("Failed to run ACP routine");
+    }
+}

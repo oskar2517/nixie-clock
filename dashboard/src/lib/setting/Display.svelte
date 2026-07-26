@@ -2,8 +2,11 @@
     import { onMount } from "svelte";
     import SelectSetting from "./settings/SelectSetting.svelte";
     import SettingGroup from "./settings/SettingGroup.svelte";
-    import { getConfig, updateConfig } from "../../api";
+    import { getConfig, runAcpRoutine, updateConfig } from "../../api";
     import { notification } from "./common/notification_store";
+    import Button from "./settings/Button.svelte";
+
+    const ACP_CYCLE_THROUGH = "<Cycle through>";
 
     const neonsModes = ["Disabled", "Blink", "Toggle"];
     const acpRoutines = ["Basic", "Sweep", "Additive", "Slot Machine"];
@@ -38,7 +41,7 @@
             const response = await updateConfig({
                 acpRoutine: acpRoutineNumber,
             });
-            acpRoutine = acpRoutines[response.acpRoutine];
+            acpRoutine = acpRoutines[response.acpRoutine] ?? ACP_CYCLE_THROUGH;
             $notification = {
                 severity: "normal",
                 message: `Set ACP mode to ${acpRoutine}`,
@@ -51,10 +54,14 @@
         }
     }
 
+    async function handleRunAcpRoutineClick() {
+        await runAcpRoutine();
+    }
+
     onMount(async () => {
         const config = await getConfig();
         neonsMode = neonsModes[config.neonsMode];
-        acpRoutine = acpRoutines[config.acpRoutine];
+        acpRoutine = acpRoutines[config.acpRoutine] ?? ACP_CYCLE_THROUGH;
     });
 </script>
 
@@ -69,9 +76,12 @@
 
     <SelectSetting
         name="Anti Cathode Poisoning Routine"
-        options={acpRoutines}
+        options={[ACP_CYCLE_THROUGH, ...acpRoutines]}
         bind:value={acpRoutine}
         onchange={handleacpRoutineChange}
         description="Animation style of the anti cathode poisoning routine."
     ></SelectSetting>
+
+    <Button name="Run Selected Routine Now" onclick={handleRunAcpRoutineClick}
+    ></Button>
 </SettingGroup>

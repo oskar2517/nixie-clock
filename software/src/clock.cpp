@@ -23,7 +23,8 @@
 // RTC config
 #define RTC_READ_INTERVAL_MS 50
 
-extern const uint8_t clock_digit_count = sizeof(anode_pins) / sizeof(anode_pins[0]);
+extern const uint8_t clock_digit_count =
+    sizeof(anode_pins) / sizeof(anode_pins[0]);
 
 static hw_timer_t* scan_timer = nullptr;
 static portMUX_TYPE display_mux = portMUX_INITIALIZER_UNLOCKED;
@@ -34,6 +35,8 @@ RTC_DS3231 rtc;
 static bool rtc_available = false;
 
 static bool acp_routine_running = false;
+
+static uint8_t cycle_next_acp_routine = 0;
 
 void clock_get_display_digits(uint8_t* digits) {
     portENTER_CRITICAL(&display_mux);
@@ -63,7 +66,16 @@ void clock_set_display(uint32_t value) {
     clock_set_display_digits(digits);
 }
 
-void clock_stop_acp_routine() { acp_routine_running = false; }
+void clock_stop_acp_routine() {
+    acp_routine_running = false;
+
+    if (config.acp_routine == -1 && acp_routine_count > 0) {
+        cycle_next_acp_routine =
+            (cycle_next_acp_routine + 1) % acp_routine_count;
+    }
+}
+
+void clock_start_acp_routine() { acp_routine_running = true; }
 
 static void IRAM_ATTR scan_isr() {
     enum ScanPhase : uint8_t {
@@ -232,8 +244,12 @@ static void init_rtc() {
 
 void clock_update() {
     if (acp_routine_running) {
-        uint8_t routine = config.acp_routine;
-        if (routine >= acp_routine_count) {
+        int8_t routine = config.acp_routine;
+        if (routine == -1) {
+            routine = cycle_next_acp_routine;
+        }
+
+        if (routine < 0 || routine >= acp_routine_count) {
             routine = 0;
         }
 
@@ -243,7 +259,7 @@ void clock_update() {
     if (acp_routine_running) return;
 
     if (config.healing_mode) {
-        acp_routine_running = true;
+        clock_start_acp_routine();
         return;
     }
 
@@ -268,7 +284,7 @@ void clock_update() {
         }
 
         if (now_s == 0) {
-            acp_routine_running = true;
+            clock_start_acp_routine();
         }
 
         sync_neons(now, second_started_ms);
