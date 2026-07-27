@@ -193,14 +193,16 @@ static uint32_t neon_duty_from_percent(uint16_t percent) {
     return (NEON_PWM_MAX_DUTY * percent) / 100;
 }
 
-static void set_neons_enabled(bool enabled) {
-    neons_enabled = enabled;
-
-    uint32_t duty =
-        enabled ? neon_duty_from_percent(config.neons_brightness) : 0;
+static void write_neon_duty(bool enabled, uint16_t brightness) {
+    uint32_t duty = enabled ? neon_duty_from_percent(brightness) : 0;
 
     ledcWrite(NEON_PWM_CHANNEL_1, duty);
     ledcWrite(NEON_PWM_CHANNEL_2, duty);
+}
+
+static void set_neons_enabled(bool enabled) {
+    neons_enabled = enabled;
+    write_neon_duty(enabled, config.neons_brightness);
 }
 
 static bool neons_should_be_enabled(const DateTime& now,
@@ -224,16 +226,16 @@ static void sync_neons(const DateTime& now, uint32_t second_started_ms) {
     set_neons_enabled(neons_should_be_enabled(now, second_started_ms));
 }
 
-void clock_apply_neon_pwm_config() {
-    ledcSetup(NEON_PWM_CHANNEL_1, config.neons_frequency,
+void clock_apply_neon_pwm_config(uint32_t frequency, uint16_t brightness) {
+    ledcSetup(NEON_PWM_CHANNEL_1, frequency, NEON_PWM_RESOLUTION_BITS);
+    ledcSetup(NEON_PWM_CHANNEL_2, frequency,
               NEON_PWM_RESOLUTION_BITS);
-    ledcSetup(NEON_PWM_CHANNEL_2, config.neons_frequency,
-              NEON_PWM_RESOLUTION_BITS);
-    set_neons_enabled(neons_enabled);
+    write_neon_duty(neons_enabled, brightness);
 }
 
 static void setup_neon_pwm() {
-    clock_apply_neon_pwm_config();
+    clock_apply_neon_pwm_config(config.neons_frequency,
+                                config.neons_brightness);
     ledcAttachPin(PIN_NEON_1, NEON_PWM_CHANNEL_1);
     ledcAttachPin(PIN_NEON_2, NEON_PWM_CHANNEL_2);
     set_neons_enabled(false);

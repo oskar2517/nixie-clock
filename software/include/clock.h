@@ -26,4 +26,4 @@ void clock_stop_acp_routine();
 
 void clock_start_acp_routine();
 
-void clock_apply_neon_pwm_config();
+void clock_apply_neon_pwm_config(uint32_t frequency, uint16_t brightness);
