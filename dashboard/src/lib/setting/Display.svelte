@@ -9,7 +9,7 @@
     const ACP_CYCLE_THROUGH = "<Cycle through>";
 
     const neonsModes = ["Disabled", "Blink", "Toggle"];
-    const acpRoutines = ["Basic", "Sweep", "Additive", "Slot Machine"];
+    const acpRoutines = ["Basic", "Sweep", "Additive", "Slot Machine", "Centroid"];
 
     let neonsMode = $state("");
     let acpRoutine = $state("");

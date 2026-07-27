@@ -132,11 +132,53 @@ static void anti_cathode_poisoning_routine_slot_machine() {
     step++;
 }
 
+static void anti_cathode_poisoning_routine_centroid() {
+    static uint32_t last_step_millis = millis();
+    static uint8_t step = 0;
+    static bool inwards = true;
+
+    if (millis() - last_step_millis < ACP_STEP_INTERVAL_MS) return;
+    last_step_millis = millis();
+
+    uint8_t digits[clock_digit_count];
+
+    clock_get_display_digits(digits);
+
+    uint8_t center = clock_digit_count / 2;
+
+    for (uint8_t i = 0; i < clock_digit_count / 2; i++) {
+        uint8_t i1 = inwards ? i : center - i - 1;
+        uint8_t i2 = inwards ? clock_digit_count - i - 1 : center + i;
+
+        uint8_t d1 = digits[i1];
+        uint8_t d2 = digits[i2];
+
+        if (step >= i * 5 && step < i * 5 + 20) {
+            d1 = (d1 + 1) % 10;
+            d2 = (d2 + 1) % 10;
+        }
+
+        digits[i1] = d1;
+        digits[i2] = d2;
+    }
+
+    clock_set_display_digits(digits);
+
+    if (step < clock_digit_count / 2 * 10) {
+        step++;
+    } else {
+        clock_stop_acp_routine();
+        step = 0;
+        inwards = !inwards;
+    }
+}
+
 const AcpRoutine acp_routines[] = {
     {anti_cathode_poisoning_routine_basic},
     {anti_cathode_poisoning_routine_sweep},
     {anti_cathode_poisoning_routine_additive},
-    {anti_cathode_poisoning_routine_slot_machine}};
+    {anti_cathode_poisoning_routine_slot_machine},
+    {anti_cathode_poisoning_routine_centroid}};
 
 const uint8_t acp_routine_count =
     sizeof(acp_routines) / sizeof(acp_routines[0]);
