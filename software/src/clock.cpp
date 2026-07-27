@@ -5,6 +5,8 @@
 #include "pins.h"
 #include "rtc.h"
 
+#include "soc/gpio_struct.h"
+
 // Multiplexing config
 #define SCAN_TICK_US 100
 #define ANODE_ON_TICKS (2000 / SCAN_TICK_US)
@@ -38,6 +40,26 @@ static bool neons_enabled = false;
 static uint8_t cycle_next_acp_routine = 0;
 
 bool clock_acp_routine_running() { return acp_routine_running; }
+
+static inline void IRAM_ATTR scan_gpio_write(uint8_t pin, bool high) {
+    if (pin < 32) {
+        uint32_t mask = 1UL << pin;
+
+        if (high) {
+            GPIO.out_w1ts = mask;
+        } else {
+            GPIO.out_w1tc = mask;
+        }
+    } else {
+        uint32_t mask = 1UL << (pin - 32);
+
+        if (high) {
+            GPIO.out1_w1ts.data = mask;
+        } else {
+            GPIO.out1_w1tc.data = mask;
+        }
+    }
+}
 
 void clock_get_display_digits(uint8_t* digits) {
     portENTER_CRITICAL(&display_mux);
@@ -99,19 +121,19 @@ static void IRAM_ATTR scan_isr() {
             active_cathode = display_digits[active_anode];
             portEXIT_CRITICAL_ISR(&display_mux);
 
-            digitalWrite(cathode_pins[active_cathode], HIGH);
+            scan_gpio_write(cathode_pins[active_cathode], HIGH);
             phase = ENABLE_ANODE;
             break;
 
         case ENABLE_ANODE:
-            digitalWrite(anode_pins[active_anode], HIGH);
+            scan_gpio_write(anode_pins[active_anode], HIGH);
             phase_ticks = ANODE_ON_TICKS;
             phase = DISABLE_ANODE;
             break;
 
         case DISABLE_ANODE:
             if (--phase_ticks == 0) {
-                digitalWrite(anode_pins[active_anode], LOW);
+                scan_gpio_write(anode_pins[active_anode], LOW);
                 phase_ticks = CATHODE_OFF_DELAY_TICKS;
                 phase = CLEAR_CATHODE;
             }
@@ -119,7 +141,7 @@ static void IRAM_ATTR scan_isr() {
 
         case CLEAR_CATHODE:
             if (--phase_ticks == 0) {
-                digitalWrite(cathode_pins[active_cathode], LOW);
+                scan_gpio_write(cathode_pins[active_cathode], LOW);
                 phase_ticks = BLANK_TICKS;
                 phase = NEXT_DIGIT;
             }
