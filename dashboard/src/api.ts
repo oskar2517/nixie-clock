@@ -2,6 +2,13 @@ export interface WiFiResponse {
     ssid: string;
 }
 
+export interface WiFiNetwork {
+    ssid: string;
+    rssi: number;
+    channel: number;
+    open: boolean;
+}
+
 export interface ClockConfig {
     timeDisplayFormat: 12 | 24,
     timezonePosix: string;
@@ -69,6 +76,16 @@ export async function getWifiStatus(): Promise<WiFiResponse> {
 
 export async function forgetWifi(): Promise<void> {
     await createRequest("DELETE", "/api/wifi");
+}
+
+export async function scanWifiNetworks(): Promise<WiFiNetwork[]> {
+    const response = await createRequest("GET", "/api/wifi/networks");
+
+    if (!response.ok) {
+        throw new Error("Failed to scan for networks");
+    }
+
+    return await response.json();
 }
 
 export async function syncTime(timestamp: number): Promise<void> {

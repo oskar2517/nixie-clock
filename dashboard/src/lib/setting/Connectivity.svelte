@@ -7,6 +7,8 @@
         setupWifi as setupWifiApi,
         forgetWifi as forgetWifiApi,
         type WiFiResponse,
+        type WiFiNetwork,
+        scanWifiNetworks,
     } from "../../api";
     import { onMount } from "svelte";
     import { notification } from "./common/notification_store";
@@ -15,13 +17,25 @@
     let password = $state("");
 
     let connecting = $state(false);
+    let scanning = $state(false);
     let wifiStatus: WiFiResponse | null = $state(null);
- 
+    let foundNetworks: WiFiNetwork[] = $state([]);
+    let hasScanned = $state(false);
+
     onMount(async () => {
         try {
             wifiStatus = await getWifiStatus();
         } catch (err) {}
     });
+
+    function reset() {
+        ssid = "";
+        password = "";
+        connecting = false;
+        scanning = false;
+        foundNetworks = [];
+        hasScanned = false;
+    }
 
     async function setupWifi() {
         try {
@@ -31,11 +45,12 @@
             ssid = "";
             password = "";
         } catch (err: any) {
-            connecting = false;
             $notification = {
                 severity: "error",
                 message: err.toString(),
             };
+            connecting = false;
+            password = "";
         }
     }
 
@@ -43,14 +58,34 @@
         try {
             await forgetWifiApi();
             wifiStatus = null;
-            ssid = "";
-            password = "";
+            reset();
         } catch (err: any) {
             $notification = {
                 severity: "error",
                 message: err.toString(),
             };
+            reset();
         }
+    }
+
+    async function handleScanWiFiClick() {
+        try {
+            scanning = true;
+            foundNetworks = await scanWifiNetworks();
+            scanning = false;
+            hasScanned = true;
+        } catch (err: any) {
+            $notification = {
+                severity: "error",
+                message: err.toString(),
+            };
+            reset();
+        }
+    }
+
+    function handleCancelClick() {
+        ssid = "";
+        password = "";
     }
 </script>
 
@@ -63,19 +98,40 @@
             </div>
         </div>
         <Button name="Forget WiFi" onclick={forgetWifi}></Button>
+    {:else if ssid === ""}
+        {#if foundNetworks.length === 0}
+            {#if hasScanned}
+                <p>No WiFi networks found.</p>
+            {:else}
+                <p>Scan for WiFi networks to begin.</p>
+            {/if}
+        {:else}
+            <div class="networks" class:disabled={scanning}>
+                {#each foundNetworks as n}
+                    <!-- svelte-ignore a11y_click_events_have_key_events -->
+                    <!-- svelte-ignore a11y_no_static_element_interactions -->
+                    <div class="network" onclick={() => (ssid = n.ssid)}>
+                        <span class="ssid">{n.ssid}</span>
+                        <span class="auth-type"
+                            >({n.open ? "Open" : "Encrypted"})</span
+                        >
+                    </div>
+                {/each}
+            </div>
+        {/if}
+        <Button
+            name="Scan For WiFi Networks"
+            onclick={handleScanWiFiClick}
+            busy={scanning}
+            disabled={scanning}
+        ></Button>
     {:else}
-        <TextInputSetting
-            name="SSID"
-            description="This has to be the exact name of the WiFi network you want to connect to."
-            disabled={connecting}
-            bind:value={ssid}
-        ></TextInputSetting>
-
         <TextInputSetting
             name="Password"
             type="password"
             bind:value={password}
             disabled={connecting}
+            description="Enter the password for WiFi {ssid}"
         ></TextInputSetting>
 
         <Button
@@ -84,11 +140,40 @@
             disabled={connecting || ssid.length === 0}
             onclick={setupWifi}
         ></Button>
+
+        <Button name="Cancel" onclick={handleCancelClick} disabled={connecting}
+        ></Button>
     {/if}
 </SettingGroup>
 
 <style>
     .higlight {
         color: white;
+    }
+
+    .networks {
+        max-height: 250px;
+        overflow: auto;
+        border: 1px solid #444;
+        padding: 5px;
+    }
+
+    .networks.disabled {
+        pointer-events: none;
+        opacity: 0.5;
+    }
+
+    .network {
+        padding: 5px;
+        cursor: pointer;
+    }
+
+    .network:hover {
+        background-color: #222323;
+    }
+
+    .auth-type {
+        color: #979797;
+        font-size: 14px;
     }
 </style>

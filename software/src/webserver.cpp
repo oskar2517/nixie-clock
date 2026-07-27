@@ -48,7 +48,8 @@ using ApiHandler = std::function<void(JsonDocument& request)>;
 
 static void handleNotFound() { server.send(404); }
 
-static void send_json(uint16_t status, JsonDocument& response) {
+template <typename T>
+static void send_json(uint16_t status, const T& response) {
     String serialized;
     serializeJson(response, serialized);
 
@@ -123,6 +124,36 @@ static void handle_wifi_forget(JsonDocument& request) {
     }
 
     server.send(204);
+}
+
+static void handle_wifi_wifi_scan(JsonDocument& request) {
+    WiFi.mode(WIFI_AP_STA);
+    WiFi.disconnect(false);
+    int16_t n = WiFi.scanNetworks();
+
+    JsonDocument response;
+    JsonArray networks = response.to<JsonArray>();
+
+    if (n < 0) {
+        WiFi.scanDelete();
+        WiFi.mode(WIFI_AP);
+        server.send(500);
+        return;
+    }
+
+    for (int16_t i = 0; i < n; i++) {
+        JsonObject network = networks.add<JsonObject>();
+
+        network["ssid"] = WiFi.SSID(i);
+        network["rssi"] = WiFi.RSSI(i);
+        network["channel"] = WiFi.channel(i);
+        network["open"] = WiFi.encryptionType(i) == WIFI_AUTH_OPEN;
+    }
+
+    WiFi.scanDelete();
+    WiFi.mode(WIFI_AP);
+
+    send_json(200, response);
 }
 
 static void handle_time_set(JsonDocument& request) {
@@ -208,6 +239,8 @@ static void setup_api() {
     on_api("/api/wifi", HTTP_POST, RequestBody::Json, handle_wifi_setup);
     on_api("/api/wifi", HTTP_GET, RequestBody::None, handle_wifi_status);
     on_api("/api/wifi", HTTP_DELETE, RequestBody::None, handle_wifi_forget);
+    on_api("/api/wifi/networks", HTTP_GET, RequestBody::None,
+           handle_wifi_wifi_scan);
 
     on_api("/api/time", HTTP_POST, RequestBody::Json, handle_time_set);
 
