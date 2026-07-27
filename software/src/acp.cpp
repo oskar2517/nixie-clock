@@ -69,6 +69,12 @@ static void anti_cathode_poisoning_routine_additive() {
     if (millis() - last_step_millis < ACP_STEP_INTERVAL_MS) return;
     last_step_millis = millis();
 
+    if (step >= 20) {
+        clock_stop_acp_routine();
+        step = 0;
+        return;
+    }
+
     uint8_t digits[clock_digit_count];
 
     clock_get_display_digits(digits);
@@ -81,13 +87,7 @@ static void anti_cathode_poisoning_routine_additive() {
     }
 
     clock_set_display_digits(digits);
-
-    if (step < 20) {
-        step++;
-    } else {
-        clock_stop_acp_routine();
-        step = 0;
-    }
+    step++;
 }
 
 static void anti_cathode_poisoning_routine_slot_machine() {
