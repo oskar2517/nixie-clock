@@ -4,6 +4,7 @@
 #include "clock.h"
 #include "config.h"
 #include "filesystem.h"
+#include "clock_mdns.h"
 #include "pins.h"
 #include "webserver.h"
 #include "wifi.h"
@@ -22,6 +23,7 @@ void setup() {
     config_load();
     clock_setup();
     wifi_ap_setup();
+    mdns_setup();
     webserver_setup();
 
     delay(1000);
