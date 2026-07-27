@@ -16,7 +16,6 @@
 #define NEON_PWM_MAX_DUTY ((1 << NEON_PWM_RESOLUTION_BITS) - 1)
 #define NEON_PWM_CHANNEL_1 0
 #define NEON_PWM_CHANNEL_2 1
-#define NEON_BRIGHTNESS_PERCENT 70
 #define NEON_HALF_PERIOD_MS 500
 
 // RTC config
@@ -34,6 +33,7 @@ RTC_DS3231 rtc;
 static bool rtc_available = false;
 
 static bool acp_routine_running = false;
+static bool neons_enabled = false;
 
 static uint8_t cycle_next_acp_routine = 0;
 
@@ -181,7 +181,7 @@ static uint32_t time_display_value(const DateTime& now) {
     return (hour * 10000UL) + (now.minute() * 100UL) + now.second();
 }
 
-static uint32_t neon_duty_from_percent(uint8_t percent) {
+static uint32_t neon_duty_from_percent(uint16_t percent) {
     if (percent > 100) {
         percent = 100;
     }
@@ -190,8 +190,10 @@ static uint32_t neon_duty_from_percent(uint8_t percent) {
 }
 
 static void set_neons_enabled(bool enabled) {
+    neons_enabled = enabled;
+
     uint32_t duty =
-        enabled ? neon_duty_from_percent(NEON_BRIGHTNESS_PERCENT) : 0;
+        enabled ? neon_duty_from_percent(config.neons_brightness) : 0;
 
     ledcWrite(NEON_PWM_CHANNEL_1, duty);
     ledcWrite(NEON_PWM_CHANNEL_2, duty);
@@ -218,13 +220,16 @@ static void sync_neons(const DateTime& now, uint32_t second_started_ms) {
     set_neons_enabled(neons_should_be_enabled(now, second_started_ms));
 }
 
-void clock_set_neon_pwm_frequency(uint32_t frequency) {
-    ledcSetup(NEON_PWM_CHANNEL_1, frequency, NEON_PWM_RESOLUTION_BITS);
-    ledcSetup(NEON_PWM_CHANNEL_2, frequency, NEON_PWM_RESOLUTION_BITS);
+void clock_apply_neon_pwm_config() {
+    ledcSetup(NEON_PWM_CHANNEL_1, config.neons_frequency,
+              NEON_PWM_RESOLUTION_BITS);
+    ledcSetup(NEON_PWM_CHANNEL_2, config.neons_frequency,
+              NEON_PWM_RESOLUTION_BITS);
+    set_neons_enabled(neons_enabled);
 }
 
 static void setup_neon_pwm() {
-    clock_set_neon_pwm_frequency(config.neons_frequency);
+    clock_apply_neon_pwm_config();
     ledcAttachPin(PIN_NEON_1, NEON_PWM_CHANNEL_1);
     ledcAttachPin(PIN_NEON_2, NEON_PWM_CHANNEL_2);
     set_neons_enabled(false);

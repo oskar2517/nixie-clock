@@ -26,4 +26,4 @@ void clock_stop_acp_routine();
 
 void clock_start_acp_routine();
 
-void clock_set_neon_pwm_frequency(uint32_t frequency);
+void clock_apply_neon_pwm_config();

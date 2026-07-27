@@ -24,6 +24,7 @@ struct ClockConfig {
     bool healing_mode;
     uint8_t neons_mode;
     uint32_t neons_frequency;
+    uint16_t neons_brightness;
     int8_t acp_routine;
 };
 

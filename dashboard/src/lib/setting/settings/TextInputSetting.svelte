@@ -7,6 +7,9 @@
         value: string;
         type?: "text" | "password" | "number" | "time";
         disabled?: boolean;
+        min?: number;
+        max?: number;
+        step?: number;
         onchange?: () => void;
     }
 
@@ -16,12 +19,24 @@
         value = $bindable(),
         type = "text",
         disabled = false,
+        min,
+        max,
+        step,
         onchange,
     }: Props = $props();
 </script>
 
 <Setting {name} {description} {disabled}>
-    <input class="text-input-setting" {type} placeholder={name} bind:value {onchange} />
+    <input
+        class="text-input-setting"
+        {type}
+        {min}
+        {max}
+        {step}
+        placeholder={name}
+        bind:value
+        {onchange}
+    />
 </Setting>
 
 <style>

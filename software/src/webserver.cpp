@@ -235,16 +235,15 @@ static bool apply_config_side_effects(const ClockConfig& next) {
         }
     }
 
-    if (next.neons_frequency != config.neons_frequency) {
-        clock_set_neon_pwm_frequency(config.neons_frequency);
-    }
-
     return true;
 }
 
 static void handle_config_post(JsonDocument& request) {
     ClockConfig next = config;
     config_apply_json(next, request);
+    bool neon_pwm_changed =
+        next.neons_frequency != config.neons_frequency ||
+        next.neons_brightness != config.neons_brightness;
 
     if (!apply_config_side_effects(next)) {
         server.send(500);
@@ -252,6 +251,10 @@ static void handle_config_post(JsonDocument& request) {
     }
 
     config = next;
+    if (neon_pwm_changed) {
+        clock_apply_neon_pwm_config();
+    }
+
     if (!config_save()) {
         server.send(500);
         return;

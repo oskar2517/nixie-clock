@@ -25,6 +25,7 @@ export interface ClockConfig {
     neonsMode: number;
     acpRoutine: number;
     neonsFrequency: number;
+    neonsBrightness: number;
 }
 
 export type ClockConfigUpdate = Partial<ClockConfig>;

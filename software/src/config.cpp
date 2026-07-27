@@ -24,7 +24,8 @@
     FIELD(healing_mode, "healingMode")                \
     FIELD(neons_mode, "neonsMode")                    \
     FIELD(acp_routine, "acpRoutine")                  \
-    FIELD(neons_frequency, "neonsFrequency")
+    FIELD(neons_frequency, "neonsFrequency")          \
+    FIELD(neons_brightness, "neonsBrightness")
 
 #define COPY2CONF(conf_name, doc_name) \
     target.conf_name = document[doc_name] | target.conf_name;
@@ -52,6 +53,7 @@ static void set_default_config() {
     config.neons_mode = CFG_NEONS_MODE_BLINK;
     config.acp_routine = 1;
     config.neons_frequency = 1000;
+    config.neons_brightness = 70;
 }
 
 void config_create_default() {

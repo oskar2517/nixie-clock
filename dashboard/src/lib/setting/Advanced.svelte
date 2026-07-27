@@ -10,6 +10,7 @@
     let ntpServer = $state("");
     let ntpFrequency = $state("");
     let neonsFrequency = $state("");
+    let neonsBrightness = $state("");
     let healingMode = $state(false);
 
     onMount(async () => {
@@ -19,6 +20,7 @@
         ntpFrequency = config.ntpFrequency.toString();
         healingMode = config.healingMode;
         neonsFrequency = config.neonsFrequency.toString();
+        neonsBrightness = config.neonsBrightness.toString();
     });
 
     async function handleNtpServerChange() {
@@ -112,6 +114,26 @@
             };
         }
     }
+
+    async function handleNeonsBrightnessChange() {
+        if (neonsBrightness === "") return;
+
+        try {
+            const response = await updateConfig({
+                neonsBrightness: parseInt(neonsBrightness),
+            });
+            neonsBrightness = response.neonsBrightness.toString();
+            $notification = {
+                severity: "normal",
+                message: `Set neons brightness to ${neonsBrightness}%`,
+            };
+        } catch (err: any) {
+            $notification = {
+                severity: "error",
+                message: err.toString(),
+            };
+        }
+    }
 </script>
 
 <SettingGroup title="Advanced">
@@ -142,6 +164,17 @@
         bind:value={neonsFrequency}
         type="number"
         onchange={handleNeonsFrequencyChange}
+    ></TextInputSetting>
+
+    <TextInputSetting
+        name="Neons Brightness"
+        description="Brightness of the seconds indicator neons in percent."
+        bind:value={neonsBrightness}
+        type="number"
+        min={0}
+        max={100}
+        step={1}
+        onchange={handleNeonsBrightnessChange}
     ></TextInputSetting>
 
     <Button name="Reset Clock Config" onclick={handleResetClockConfigClick}
