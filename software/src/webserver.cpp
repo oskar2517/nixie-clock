@@ -339,8 +339,8 @@ static void handle_diagnostics_get(JsonDocument& request) {
     }
 
     JsonObject rtc_diagnostics = response["rtc"].to<JsonObject>();
-    rtc_diagnostics["available"] = clock_rtc_available();
-    if (clock_rtc_available()) {
+    rtc_diagnostics["available"] = rtc_is_available();
+    if (rtc_is_available()) {
         DateTime now = rtc.now();
         rtc_diagnostics["lostPower"] = rtc.lostPower();
         rtc_diagnostics["unixTime"] = now.unixtime();

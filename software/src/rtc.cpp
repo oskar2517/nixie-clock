@@ -1,3 +1,5 @@
+#include "rtc.h"
+
 #include <sys/time.h>
 #include <time.h>
 
@@ -5,6 +7,30 @@
 #include "clock.h"
 #include "config.h"
 #include "wifi.h"
+
+RTC_DS3231 rtc;
+static bool rtc_available = false;
+
+bool rtc_is_available() {
+    return rtc_available;
+}
+
+bool rtc_init() {
+    rtc_available = rtc.begin(&Wire);
+    delay(100);  // Make sure to wait until RTC is available...
+    if (!rtc_available) {
+        Serial.println("DS3231 not found");
+        return false;
+    }
+
+    if (rtc.lostPower()) {
+        if (!config.automatic_time || !rtc_ntp_fetch_time()) {
+            rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+        }
+    }
+
+    return true;
+}
 
 static tm tm_from_datetime(const DateTime& datetime) {
     tm timeinfo = {};
@@ -50,9 +76,7 @@ static bool adjust_rtc() {
 }
 
 static bool set_timezone(const char* posix_timezone) {
-    if (!posix_timezone) {
-        return false;
-    }
+    if (!rtc_available || !posix_timezone) return false;
 
     setenv("TZ", posix_timezone, 1);
     tzset();
@@ -60,7 +84,7 @@ static bool set_timezone(const char* posix_timezone) {
 }
 
 bool rtc_ntp_fetch_time() {
-    if (!wifi_connect_with_config_credentials()) return false;
+    if (!rtc_available || !wifi_connect_with_config_credentials()) return false;
 
     Serial.print("Fetching time from NTP server ");
     Serial.println(config.ntp_server);
@@ -78,6 +102,8 @@ bool rtc_ntp_fetch_time() {
 }
 
 bool rtc_set_unix_time(time_t unix_timestamp) {
+    if (!rtc_available) return false;
+
     set_system_time(unix_timestamp);
 
     if (!set_timezone(config.timezone_posix.c_str())) {
@@ -92,6 +118,8 @@ bool rtc_set_unix_time(time_t unix_timestamp) {
 }
 
 bool rtc_set_timezone(const char* posix_timezone) {
+    if (!rtc_available) return false;
+
     const char* current_posix_timezone = config.timezone_posix.c_str();
 
     if (!set_timezone(current_posix_timezone)) {

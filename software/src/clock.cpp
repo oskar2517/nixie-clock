@@ -32,15 +32,10 @@ static portMUX_TYPE display_mux = portMUX_INITIALIZER_UNLOCKED;
 
 static volatile uint8_t display_digits[clock_digit_count] = {};
 
-RTC_DS3231 rtc;
-static bool rtc_available = false;
-
 static bool acp_routine_running = false;
 static bool neons_enabled = false;
 
 static uint8_t cycle_next_acp_routine = 0;
-
-bool clock_rtc_available() { return rtc_available; }
 
 bool clock_acp_routine_running() { return acp_routine_running; }
 
@@ -240,28 +235,6 @@ static void setup_neon_pwm() {
     set_neons_enabled(false);
 }
 
-static void init_rtc() {
-    start_scan_timer();
-
-    rtc_available = rtc.begin(&Wire);
-    delay(100);  // Make sure to wait until RTC is available...
-    if (!rtc_available) {
-        Serial.println("DS3231 not found");
-        clock_set_display(999999);
-        return;
-    }
-
-    if (rtc.lostPower()) {
-        if (!config.automatic_time || !rtc_ntp_fetch_time()) {
-            rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-        }
-    }
-
-    DateTime now = rtc.now();
-    clock_set_display(time_display_value(now));
-    sync_neons(now, millis());
-}
-
 void clock_update() {
     if (acp_routine_running) {
         int8_t routine =
@@ -292,7 +265,7 @@ void clock_update() {
     static uint32_t second_started_ms = 0;
     uint32_t now_ms = millis();
 
-    if (rtc_available && now_ms - last_read_ms >= RTC_READ_INTERVAL_MS) {
+    if (rtc_is_available() && now_ms - last_read_ms >= RTC_READ_INTERVAL_MS) {
         last_read_ms = now_ms;
 
         DateTime now = rtc.now();
@@ -313,7 +286,7 @@ void clock_update() {
         sync_neons(now, second_started_ms);
     }
 
-    if (config.automatic_time &&
+    if (rtc_is_available() && config.automatic_time &&
         now_ms - last_ntp_update >= 60000UL * config.ntp_frequency) {
         Serial.println("Setting time automatically...");
         last_ntp_update = now_ms;
@@ -329,5 +302,14 @@ void clock_setup() {
     setup_pins(cathode_pins, 10);
     setup_neon_pwm();
 
-    init_rtc();
+    start_scan_timer();
+
+    if (!rtc_init()) {
+        clock_set_display(999999);
+        return;
+    }
+
+    DateTime now = rtc.now();
+    clock_set_display(time_display_value(now));
+    sync_neons(now, millis());
 }

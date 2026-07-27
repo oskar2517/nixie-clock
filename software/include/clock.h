@@ -2,17 +2,11 @@
 
 #include <stdint.h>
 
-#include "RTClib.h"
-
-extern RTC_DS3231 rtc;
-
 extern const uint8_t clock_digit_count;
 
 void clock_setup();
 
 void clock_update();
-
-bool clock_rtc_available();
 
 bool clock_acp_routine_running();
 
