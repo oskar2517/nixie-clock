@@ -259,6 +259,9 @@ void clock_update() {
     if (acp_routine_running) return;
 
     if (config.healing_mode) {
+        // Only use basic acp mode for healing
+        cycle_next_acp_routine = 0;
+        set_neons_enabled(false);
         clock_start_acp_routine();
         return;
     }
