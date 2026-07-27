@@ -20,6 +20,7 @@
 
 static WebServer server(80);
 static DNSServer dns_server;
+static bool wifi_scan_running = false;
 
 static bool request_from_access_point() {
     return server.client().localIP() == WiFi.softAPIP();
@@ -177,16 +178,32 @@ static void handle_wifi_forget(JsonDocument& request) {
 }
 
 static void handle_wifi_wifi_scan(JsonDocument& request) {
-    WiFi.mode(WIFI_AP_STA);
-    WiFi.disconnect(false);
-    int16_t n = WiFi.scanNetworks();
+    int16_t n = WiFi.scanComplete();
+
+    if (wifi_scan_running && n == WIFI_SCAN_RUNNING) {
+        server.send(202);
+        return;
+    }
+
+    if (!wifi_scan_running) {
+        WiFi.mode(WIFI_AP_STA);
+
+        int16_t scan_status = WiFi.scanNetworks(true);
+        if (scan_status == WIFI_SCAN_RUNNING) {
+            wifi_scan_running = true;
+            server.send(202);
+            return;
+        }
+
+        n = scan_status;
+    }
 
     JsonDocument response;
     JsonArray networks = response.to<JsonArray>();
 
     if (n < 0) {
         WiFi.scanDelete();
-        WiFi.mode(WIFI_AP);
+        wifi_scan_running = false;
         server.send(500);
         return;
     }
@@ -201,7 +218,7 @@ static void handle_wifi_wifi_scan(JsonDocument& request) {
     }
 
     WiFi.scanDelete();
-    WiFi.mode(WIFI_AP);
+    wifi_scan_running = false;
 
     send_json(200, response);
 }

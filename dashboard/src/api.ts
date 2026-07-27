@@ -91,13 +91,22 @@ export async function forgetWifi(): Promise<void> {
 }
 
 export async function scanWifiNetworks(): Promise<WiFiNetwork[]> {
-    const response = await createRequest("GET", "/api/wifi/networks");
+    for (let attempt = 0; attempt < 60; attempt++) {
+        const response = await createRequest("GET", "/api/wifi/networks");
 
-    if (!response.ok) {
-        throw new Error("Failed to scan for networks");
+        if (response.status === 202) {
+            await new Promise((resolve) => setTimeout(resolve, 250));
+            continue;
+        }
+
+        if (!response.ok) {
+            throw new Error("Failed to scan for networks");
+        }
+
+        return await response.json();
     }
 
-    return await response.json();
+    throw new Error("Timed out scanning for networks");
 }
 
 export async function syncTime(timestamp: number): Promise<void> {
