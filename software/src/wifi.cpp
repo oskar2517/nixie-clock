@@ -5,7 +5,7 @@
 #include "config.h"
 
 bool wifi_connect_with_config_credentials() {
-    if (config.wifi_ssid.length() == 0 || config.wifi_password.length() == 0) {
+    if (config.wifi_ssid.length() == 0) {
         return false;
     }
 
