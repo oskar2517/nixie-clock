@@ -93,8 +93,8 @@ static const char* wifi_mode_name(wifi_mode_t mode) {
 static String datetime_to_iso(const DateTime& datetime) {
     char buffer[20];
     snprintf(buffer, sizeof(buffer), "%04d-%02d-%02dT%02d:%02d:%02d",
-             datetime.year(), datetime.month(), datetime.day(),
-             datetime.hour(), datetime.minute(), datetime.second());
+             datetime.year(), datetime.month(), datetime.day(), datetime.hour(),
+             datetime.minute(), datetime.second());
 
     return String(buffer);
 }
@@ -226,7 +226,7 @@ static void handle_wifi_wifi_scan(JsonDocument& request) {
 static void handle_time_set(JsonDocument& request) {
     int64_t unix_timestamp = request["timestamp"] | 0;
 
-    if (unix_timestamp <= 0 || unix_timestamp > INT32_MAX) {
+    if (unix_timestamp <= 0) {
         server.send(400);
         return;
     }
