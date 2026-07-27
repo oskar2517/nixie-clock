@@ -204,7 +204,6 @@ static void handle_firmware_get(JsonDocument& request) {
     send_json(200, response);
 }
 
-// TODO: Button to reset config
 static void setup_api() {
     on_api("/api/wifi", HTTP_POST, RequestBody::Json, handle_wifi_setup);
     on_api("/api/wifi", HTTP_GET, RequestBody::None, handle_wifi_status);
