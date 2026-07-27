@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
+#include <DNSServer.h>
 #include <LittleFS.h>
 #include <WebServer.h>
 #include <WiFi.h>
@@ -15,8 +16,10 @@
 #include "wifi.h"
 
 #define BASE_PATH "/dashboard/"
+#define DNS_PORT 53
 
 static WebServer server(80);
+static DNSServer dns_server;
 
 static bool request_from_access_point() {
     return server.client().localIP() == WiFi.softAPIP();
@@ -48,7 +51,28 @@ enum class RequestBody : uint8_t {
 
 using ApiHandler = std::function<void(JsonDocument& request)>;
 
-static void handleNotFound() { server.send(404); }
+static String dashboard_url() {
+    return String("http://") + WiFi.softAPIP().toString() + "/";
+}
+
+static void redirect_to_dashboard() {
+    server.sendHeader("Location", dashboard_url(), true);
+    server.send(302, "text/plain", "");
+}
+
+static void handleNotFound() {
+    if (server.uri().startsWith("/api/")) {
+        server.send(404);
+        return;
+    }
+
+    if (filesystem_available) {
+        redirect_to_dashboard();
+        return;
+    }
+
+    server.send(200, "text/plain", "Nixie Clock dashboard unavailable");
+}
 
 static const char* wifi_mode_name(wifi_mode_t mode) {
     switch (mode) {
@@ -345,10 +369,30 @@ static void setup_api() {
            handle_diagnostics_get);
 }
 
+static void setup_captive_portal() {
+    IPAddress ap_ip = WiFi.softAPIP();
+
+    dns_server.start(DNS_PORT, "*", ap_ip);
+
+    server.on("/generate_204", HTTP_GET, redirect_to_dashboard);
+    server.on("/gen_204", HTTP_GET, redirect_to_dashboard);
+    server.on("/hotspot-detect.html", HTTP_GET, redirect_to_dashboard);
+    server.on("/library/test/success.html", HTTP_GET, redirect_to_dashboard);
+    server.on("/ncsi.txt", HTTP_GET, redirect_to_dashboard);
+    server.on("/connecttest.txt", HTTP_GET, redirect_to_dashboard);
+    server.on("/redirect", HTTP_GET, redirect_to_dashboard);
+    server.on("/canonical.html", HTTP_GET, redirect_to_dashboard);
+    server.on("/success.txt", HTTP_GET, redirect_to_dashboard);
+
+    Serial.print("Captive portal DNS listening at ");
+    Serial.println(ap_ip);
+}
+
 void webserver_setup() {
     server.addHandler(new AccessPointOnlyHandler());
 
     setup_api();
+    setup_captive_portal();
 
     if (filesystem_available) {
         server.serveStatic("/", LittleFS, BASE_PATH);
@@ -360,4 +404,7 @@ void webserver_setup() {
     Serial.println("Web server listening on port 80");
 }
 
-void webserver_update() { server.handleClient(); }
+void webserver_update() {
+    dns_server.processNextRequest();
+    server.handleClient();
+}
