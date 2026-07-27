@@ -245,32 +245,15 @@ static void handle_config_get(JsonDocument& request) {
     send_json(200, response);
 }
 
-static bool apply_config_side_effects(const ClockConfig& next) {
-    if (next.timezone_posix != config.timezone_posix) {
-        if (!rtc_set_timezone(next.timezone_posix.c_str())) {
-            return false;
-        }
-    }
-
-    if (next.neons_frequency != config.neons_frequency ||
-        next.neons_brightness != config.neons_brightness) {
-        clock_apply_neon_pwm_config(next.neons_frequency,
-                                    next.neons_brightness);
-    }
-
-    return true;
-}
-
 static void handle_config_post(JsonDocument& request) {
     ClockConfig next = config;
-    config_apply_json(next, request);
+    config_apply_json(next, request, false);
 
-    if (!apply_config_side_effects(next)) {
+    if (!config_apply(next)) {
         server.send(500);
         return;
     }
 
-    config = next;
     if (!config_save()) {
         server.send(500);
         return;
@@ -283,7 +266,11 @@ static void handle_config_post(JsonDocument& request) {
 }
 
 static void handle_config_delete(JsonDocument& request) {
-    config_create_default();
+    if (!config_reset_to_default()) {
+        server.send(500);
+        return;
+    }
+
     if (!config_save()) {
         server.send(500);
         return;

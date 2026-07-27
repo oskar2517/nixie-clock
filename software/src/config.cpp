@@ -3,6 +3,9 @@
 #include <ArduinoJson.h>
 #include <LittleFS.h>
 
+#include "clock.h"
+#include "rtc.h"
+
 #define CONFIG_FILE "/config.json"
 
 #define CONFIG_SECRET_FIELDS(FIELD) \
@@ -34,30 +37,36 @@
 
 ClockConfig config;
 
+static bool config_apply_side_effects(const ClockConfig& next);
+
 // TODO: Implement config validation
-static void set_default_config() {
-    config.wifi_ssid = "";
-    config.wifi_password = "";
-    config.timezone_posix = "CET-1CEST,M3.5.0/2,M10.5.0/3";
-    config.timezone_iana = "Europe/Berlin";
-    config.time_display_format = 24;
-    config.automatic_time = true;
-    config.timer = false;
-    config.timer_tubes_off_hours = 22;
-    config.timer_tubes_off_minutes = 0;
-    config.timer_tubes_on_hours = 9;
-    config.timer_tubes_on_minutes = 0;
-    config.ntp_server = "pool.ntp.org";
-    config.ntp_frequency = 60;
-    config.healing_mode = false;
-    config.neons_mode = CFG_NEONS_MODE_BLINK;
-    config.acp_routine = 1;
-    config.neons_frequency = 1000;
-    config.neons_brightness = 70;
+static ClockConfig default_config() {
+    ClockConfig next;
+
+    next.wifi_ssid = "";
+    next.wifi_password = "";
+    next.timezone_posix = "CET-1CEST,M3.5.0/2,M10.5.0/3";
+    next.timezone_iana = "Europe/Berlin";
+    next.time_display_format = 24;
+    next.automatic_time = true;
+    next.timer = false;
+    next.timer_tubes_off_hours = 22;
+    next.timer_tubes_off_minutes = 0;
+    next.timer_tubes_on_hours = 9;
+    next.timer_tubes_on_minutes = 0;
+    next.ntp_server = "pool.ntp.org";
+    next.ntp_frequency = 60;
+    next.healing_mode = false;
+    next.neons_mode = CFG_NEONS_MODE_BLINK;
+    next.acp_routine = 1;
+    next.neons_frequency = 1000;
+    next.neons_brightness = 70;
+
+    return next;
 }
 
-void config_create_default() {
-    set_default_config();
+static void load_default_config() {
+    config = default_config();
     Serial.println("Created default config");
 }
 
@@ -70,8 +79,12 @@ static void config_to_json(const ClockConfig& source, JsonDocument& document,
     CONFIG_PUBLIC_FIELDS(COPY2DOC)
 }
 
-static void config_apply_json(ClockConfig& target, JsonDocument& document,
-                              bool include_secrets) {
+void config_to_json(JsonDocument& document) {
+    config_to_json(config, document, false);
+}
+
+void config_apply_json(ClockConfig& target, JsonDocument& document,
+                       bool include_secrets) {
     if (include_secrets) {
         CONFIG_SECRET_FIELDS(COPY2CONF)
     }
@@ -111,21 +124,13 @@ bool config_save() {
     return true;
 }
 
-void config_to_json(JsonDocument& document) {
-    config_to_json(config, document, false);
-}
-
-void config_apply_json(ClockConfig& target, JsonDocument& document) {
-    config_apply_json(target, document, false);
-}
-
 void config_load() {
     Serial.println("Loading config file from LittleFS...");
 
     File file = LittleFS.open(CONFIG_FILE, FILE_READ);
     if (!file || file.isDirectory()) {
         Serial.println("Failed to open config file for reading");
-        config_create_default();
+        load_default_config();
         return;
     }
 
@@ -136,12 +141,48 @@ void config_load() {
     if (error) {
         Serial.print("Failed to parse config file: ");
         Serial.println(error.c_str());
-        config_create_default();
+        load_default_config();
         return;
     }
 
-    set_default_config();
-    config_apply_json(config, document, true);
+    ClockConfig next = default_config();
+    config_apply_json(next, document, true);
+    config = next;
 
     Serial.println("Loaded config file successfully");
+}
+
+bool config_apply(const ClockConfig& next) {
+    if (!config_apply_side_effects(next)) {
+        return false;
+    }
+
+    config = next;
+    return true;
+}
+
+bool config_reset_to_default() {
+    if (!config_apply(default_config())) {
+        return false;
+    }
+
+    Serial.println("Reset config to defaults");
+
+    return true;
+}
+
+bool config_apply_side_effects(const ClockConfig& next) {
+    if (next.timezone_posix != config.timezone_posix) {
+        if (!rtc_set_timezone(next.timezone_posix.c_str())) {
+            return false;
+        }
+    }
+
+    if (next.neons_frequency != config.neons_frequency ||
+        next.neons_brightness != config.neons_brightness) {
+        clock_apply_neon_pwm_config(next.neons_frequency,
+                                    next.neons_brightness);
+    }
+
+    return true;
 }
