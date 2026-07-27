@@ -228,8 +228,7 @@ static void sync_neons(const DateTime& now, uint32_t second_started_ms) {
 
 void clock_apply_neon_pwm_config(uint32_t frequency, uint16_t brightness) {
     ledcSetup(NEON_PWM_CHANNEL_1, frequency, NEON_PWM_RESOLUTION_BITS);
-    ledcSetup(NEON_PWM_CHANNEL_2, frequency,
-              NEON_PWM_RESOLUTION_BITS);
+    ledcSetup(NEON_PWM_CHANNEL_2, frequency, NEON_PWM_RESOLUTION_BITS);
     write_neon_duty(neons_enabled, brightness);
 }
 
@@ -245,7 +244,7 @@ static void init_rtc() {
     start_scan_timer();
 
     rtc_available = rtc.begin(&Wire);
-    delay(100); // Make sure to wait until RTC is available...
+    delay(100);  // Make sure to wait until RTC is available...
     if (!rtc_available) {
         Serial.println("DS3231 not found");
         clock_set_display(999999);
@@ -253,7 +252,9 @@ static void init_rtc() {
     }
 
     if (rtc.lostPower()) {
-        rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+        if (!config.automatic_time || !rtc_ntp_fetch_time()) {
+            rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+        }
     }
 
     DateTime now = rtc.now();
@@ -263,8 +264,8 @@ static void init_rtc() {
 
 void clock_update() {
     if (acp_routine_running) {
-        int8_t routine = config.healing_mode ? ACP_ROUTINE_BASIC
-                                             : config.acp_routine;
+        int8_t routine =
+            config.healing_mode ? ACP_ROUTINE_BASIC : config.acp_routine;
         if (!config.healing_mode && routine == -1) {
             routine = cycle_next_acp_routine;
         }
