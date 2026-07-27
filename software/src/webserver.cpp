@@ -61,7 +61,7 @@ static void redirect_to_dashboard() {
     server.send(302, "text/plain", "");
 }
 
-static void handleNotFound() {
+static void handle_not_found() {
     if (server.uri().startsWith("/api/")) {
         server.send(404);
         return;
@@ -418,7 +418,7 @@ void webserver_setup() {
         server.serveStatic("/", LittleFS, BASE_PATH);
     }
 
-    server.onNotFound(handleNotFound);
+    server.onNotFound(handle_not_found);
 
     server.begin();
     Serial.println("Web server listening on port 80");
