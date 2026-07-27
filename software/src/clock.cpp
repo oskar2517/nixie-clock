@@ -38,6 +38,10 @@ static bool acp_routine_running = false;
 
 static uint8_t cycle_next_acp_routine = 0;
 
+bool clock_rtc_available() { return rtc_available; }
+
+bool clock_acp_routine_running() { return acp_routine_running; }
+
 void clock_get_display_digits(uint8_t* digits) {
     portENTER_CRITICAL(&display_mux);
     for (uint8_t i = 0; i < clock_digit_count; i++) {

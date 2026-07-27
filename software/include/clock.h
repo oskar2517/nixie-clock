@@ -12,6 +12,10 @@ void clock_setup();
 
 void clock_update();
 
+bool clock_rtc_available();
+
+bool clock_acp_routine_running();
+
 void clock_get_display_digits(uint8_t* digits);
 
 void clock_set_display_digits(const uint8_t* digits);

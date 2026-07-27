@@ -8,6 +8,7 @@
     import Notification from "./lib/setting/common/Notification.svelte";
     import { onMount } from "svelte";
     import { getFirmware } from "./api";
+    import Diagnostics from "./lib/setting/Diagnostics.svelte";
 
     let firmwareVersion = $state("");
 
@@ -30,6 +31,8 @@
     <Timer />
 
     <Advanced />
+
+    <Diagnostics />
 
     <Notification />
 </div>

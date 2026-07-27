@@ -1,3 +1,4 @@
+#include <Arduino.h>
 #include <ArduinoJson.h>
 #include <LittleFS.h>
 #include <WebServer.h>
@@ -5,6 +6,7 @@
 
 #include <functional>
 
+#include "acp.h"
 #include "clock.h"
 #include "config.h"
 #include "filesystem.h"
@@ -47,6 +49,30 @@ enum class RequestBody : uint8_t {
 using ApiHandler = std::function<void(JsonDocument& request)>;
 
 static void handleNotFound() { server.send(404); }
+
+static const char* wifi_mode_name(wifi_mode_t mode) {
+    switch (mode) {
+        case WIFI_OFF:
+            return "off";
+        case WIFI_STA:
+            return "sta";
+        case WIFI_AP:
+            return "ap";
+        case WIFI_AP_STA:
+            return "ap_sta";
+        default:
+            return "unknown";
+    }
+}
+
+static String datetime_to_iso(const DateTime& datetime) {
+    char buffer[20];
+    snprintf(buffer, sizeof(buffer), "%04d-%02d-%02dT%02d:%02d:%02d",
+             datetime.year(), datetime.month(), datetime.day(),
+             datetime.hour(), datetime.minute(), datetime.second());
+
+    return String(buffer);
+}
 
 template <typename T>
 static void send_json(uint16_t status, const T& response) {
@@ -235,6 +261,66 @@ static void handle_firmware_get(JsonDocument& request) {
     send_json(200, response);
 }
 
+static void handle_diagnostics_get(JsonDocument& request) {
+    JsonDocument response;
+
+    JsonObject firmware = response["firmware"].to<JsonObject>();
+    firmware["version"] = FIRMWARE_VERSION;
+
+    JsonObject system = response["system"].to<JsonObject>();
+    system["uptimeMs"] = millis();
+    system["chipModel"] = ESP.getChipModel();
+    system["chipRevision"] = ESP.getChipRevision();
+    system["cpuMhz"] = ESP.getCpuFreqMHz();
+    system["sdkVersion"] = ESP.getSdkVersion();
+    system["freeHeap"] = ESP.getFreeHeap();
+    system["minFreeHeap"] = ESP.getMinFreeHeap();
+    system["sketchSize"] = ESP.getSketchSize();
+    system["freeSketchSpace"] = ESP.getFreeSketchSpace();
+
+    JsonObject wifi = response["wifi"].to<JsonObject>();
+    wifi["mode"] = wifi_mode_name(WiFi.getMode());
+    wifi["apSsid"] = WIFI_AP_SSID;
+    wifi["apIp"] = WiFi.softAPIP().toString();
+    wifi["apConnectedClients"] = WiFi.softAPgetStationNum();
+
+    wl_status_t station_status = WiFi.status();
+    wifi["stationConnected"] = station_status == WL_CONNECTED;
+    wifi["stationStatus"] = station_status;
+    wifi["stationSsid"] = WiFi.SSID();
+    wifi["stationIp"] = WiFi.localIP().toString();
+    if (station_status == WL_CONNECTED) {
+        wifi["stationRssi"] = WiFi.RSSI();
+    }
+
+    JsonObject filesystem = response["filesystem"].to<JsonObject>();
+    filesystem["available"] = filesystem_available;
+    if (filesystem_available) {
+        size_t total_bytes = LittleFS.totalBytes();
+        size_t used_bytes = LittleFS.usedBytes();
+
+        filesystem["totalBytes"] = total_bytes;
+        filesystem["usedBytes"] = used_bytes;
+        filesystem["freeBytes"] = total_bytes - used_bytes;
+    }
+
+    JsonObject rtc_diagnostics = response["rtc"].to<JsonObject>();
+    rtc_diagnostics["available"] = clock_rtc_available();
+    if (clock_rtc_available()) {
+        DateTime now = rtc.now();
+        rtc_diagnostics["lostPower"] = rtc.lostPower();
+        rtc_diagnostics["unixTime"] = now.unixtime();
+        rtc_diagnostics["dateTime"] = datetime_to_iso(now);
+    }
+
+    JsonObject clock = response["clock"].to<JsonObject>();
+    clock["digitCount"] = clock_digit_count;
+    clock["acpRunning"] = clock_acp_routine_running();
+    clock["acpRoutineCount"] = acp_routine_count;
+
+    send_json(200, response);
+}
+
 static void setup_api() {
     on_api("/api/wifi", HTTP_POST, RequestBody::Json, handle_wifi_setup);
     on_api("/api/wifi", HTTP_GET, RequestBody::None, handle_wifi_status);
@@ -251,6 +337,8 @@ static void setup_api() {
     on_api("/api/acp_test", HTTP_POST, RequestBody::None, handle_acp_test_post);
 
     on_api("/api/firmware", HTTP_GET, RequestBody::None, handle_firmware_get);
+    on_api("/api/diagnostics", HTTP_GET, RequestBody::None,
+           handle_diagnostics_get);
 }
 
 void webserver_setup() {

@@ -12,6 +12,7 @@
     } from "../../api";
     import { onMount } from "svelte";
     import { notification } from "./common/notification_store";
+    import Group from "./common/Group.svelte";
 
     let ssid = $state("");
     let password = $state("");
@@ -106,7 +107,7 @@
                 <p>Scan for WiFi networks to begin.</p>
             {/if}
         {:else}
-            <div class="networks" class:disabled={scanning}>
+            <Group disabled={scanning}>
                 {#each foundNetworks as n}
                     <!-- svelte-ignore a11y_click_events_have_key_events -->
                     <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -117,7 +118,7 @@
                         >
                     </div>
                 {/each}
-            </div>
+            </Group>
         {/if}
         <Button
             name="Scan For WiFi Networks"
@@ -149,18 +150,6 @@
 <style>
     .higlight {
         color: white;
-    }
-
-    .networks {
-        max-height: 250px;
-        overflow: auto;
-        border: 1px solid #444;
-        padding: 5px;
-    }
-
-    .networks.disabled {
-        pointer-events: none;
-        opacity: 0.5;
     }
 
     .network {

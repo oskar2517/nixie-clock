@@ -32,6 +32,16 @@ export interface Firmware {
     version: string;
 }
 
+export type JsonValue =
+    | string
+    | number
+    | boolean
+    | null
+    | JsonValue[]
+    | { [key: string]: JsonValue };
+
+export type DiagnosticsResponse = Record<string, JsonValue>;
+
 function createRequest(method: "POST" | "GET" | "DELETE", route: string, body?: string): Promise<Response> {
     if (body) {
         return fetch(route, {
@@ -138,6 +148,16 @@ export async function runAcpRoutine(): Promise<void> {
 
 export async function getFirmware(): Promise<Firmware> {
     const response = await createRequest("GET", "/api/firmware");
+
+    return response.json();
+}
+
+export async function getDisganostics(): Promise<DiagnosticsResponse> {
+    const response = await createRequest("GET", "/api/diagnostics");
+
+    if (!response.ok) {
+        throw new Error("Failed to get diagnostics");
+    }
 
     return response.json();
 }
