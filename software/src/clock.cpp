@@ -21,6 +21,9 @@
 // RTC config
 #define RTC_READ_INTERVAL_MS 50
 
+// ACP config
+#define ACP_ROUTINE_BASIC 0
+
 extern const uint8_t clock_digit_count =
     sizeof(anode_pins) / sizeof(anode_pins[0]);
 
@@ -72,7 +75,8 @@ void clock_set_display(uint32_t value) {
 void clock_stop_acp_routine() {
     acp_routine_running = false;
 
-    if (config.acp_routine == -1 && acp_routine_count > 0) {
+    if (!config.healing_mode && config.acp_routine == -1 &&
+        acp_routine_count > 0) {
         cycle_next_acp_routine =
             (cycle_next_acp_routine + 1) % acp_routine_count;
     }
@@ -257,8 +261,9 @@ static void init_rtc() {
 
 void clock_update() {
     if (acp_routine_running) {
-        int8_t routine = config.acp_routine;
-        if (routine == -1) {
+        int8_t routine = config.healing_mode ? ACP_ROUTINE_BASIC
+                                             : config.acp_routine;
+        if (!config.healing_mode && routine == -1) {
             routine = cycle_next_acp_routine;
         }
 
@@ -273,7 +278,6 @@ void clock_update() {
 
     if (config.healing_mode) {
         // Only use basic acp mode for healing
-        cycle_next_acp_routine = 0;
         set_neons_enabled(false);
         clock_start_acp_routine();
         return;
