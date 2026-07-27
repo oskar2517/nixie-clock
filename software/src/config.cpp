@@ -51,7 +51,7 @@ static void set_default_config() {
     config.acp_routine = 1;
 }
 
-static void create_default_config() {
+void config_create_default() {
     set_default_config();
     Serial.println("Created default config");
 }
@@ -120,7 +120,7 @@ void config_load() {
     File file = LittleFS.open(CONFIG_FILE, FILE_READ);
     if (!file || file.isDirectory()) {
         Serial.println("Failed to open config file for reading");
-        create_default_config();
+        config_create_default();
         return;
     }
 
@@ -131,7 +131,7 @@ void config_load() {
     if (error) {
         Serial.print("Failed to parse config file: ");
         Serial.println(error.c_str());
-        create_default_config();
+        config_create_default();
         return;
     }
 

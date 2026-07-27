@@ -35,3 +35,5 @@ bool config_save();
 void config_to_json(JsonDocument& document);
 
 void config_apply_json(ClockConfig& target, JsonDocument& document);
+
+void config_create_default();

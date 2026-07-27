@@ -3,8 +3,9 @@
     import SettingGroup from "./settings/SettingGroup.svelte";
     import SwitchSetting from "./settings/SwitchSetting.svelte";
     import TextInputSetting from "./settings/TextInputSetting.svelte";
-    import { getConfig, updateConfig } from "../../api";
+    import { getConfig, resetConfig, updateConfig } from "../../api";
     import { notification } from "./common/notification_store";
+    import Button from "./settings/Button.svelte";
 
     let ntpServer = $state("");
     let ntpFrequency = $state("");
@@ -66,8 +67,22 @@
             healingMode = response.healingMode;
             $notification = {
                 severity: "normal",
-                message: healingMode ? "Enabled healing mode" : "Disabled healing mode"
+                message: healingMode
+                    ? "Enabled healing mode"
+                    : "Disabled healing mode",
             };
+        } catch (err: any) {
+            $notification = {
+                severity: "error",
+                message: err.toString(),
+            };
+        }
+    }
+
+    async function handleResetClockConfigClick() {
+        try {
+            await resetConfig();
+            window.location.reload();
         } catch (err: any) {
             $notification = {
                 severity: "error",
@@ -98,4 +113,7 @@
         bind:value={healingMode}
         onchange={handleHealingModeChange}
     ></SwitchSetting>
+
+    <Button name="Reset Clock Config" onclick={handleResetClockConfigClick}
+    ></Button>
 </SettingGroup>

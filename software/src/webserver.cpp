@@ -178,6 +178,19 @@ static void handle_config_post(JsonDocument& request) {
     send_json(200, response);
 }
 
+static void handle_config_delete(JsonDocument& request) {
+    config_create_default();
+    if (!config_save()) {
+        server.send(500);
+        return;
+    }
+
+    JsonDocument response;
+    config_to_json(response);
+
+    send_json(200, response);
+}
+
 static void handle_acp_test_post(JsonDocument& request) {
     clock_start_acp_routine();
 
@@ -201,6 +214,7 @@ static void setup_api() {
 
     on_api("/api/config", HTTP_GET, RequestBody::None, handle_config_get);
     on_api("/api/config", HTTP_POST, RequestBody::Json, handle_config_post);
+    on_api("/api/config", HTTP_DELETE, RequestBody::None, handle_config_delete);
 
     on_api("/api/acp_test", HTTP_POST, RequestBody::None, handle_acp_test_post);
 

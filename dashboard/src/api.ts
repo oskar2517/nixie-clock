@@ -91,6 +91,16 @@ export async function getConfig(): Promise<ClockConfig> {
     return await response.json();
 }
 
+export async function resetConfig(): Promise<ClockConfig> {
+    const response = await createRequest("DELETE", "/api/config");
+
+    if (!response.ok) {
+        throw new Error("Failed to reset config");
+    }
+
+    return await response.json();
+}
+
 export async function updateConfig(update: ClockConfigUpdate): Promise<ClockConfig> {
     const response = await createRequest("POST", "/api/config", JSON.stringify(update));
 
