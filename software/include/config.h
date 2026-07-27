@@ -23,6 +23,7 @@ struct ClockConfig {
     uint16_t ntp_frequency;
     bool healing_mode;
     uint8_t neons_mode;
+    uint32_t neons_frequency;
     int8_t acp_routine;
 };
 

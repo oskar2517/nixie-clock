@@ -12,12 +12,11 @@
 #define BLANK_TICKS (200 / SCAN_TICK_US)
 
 // Neons config
-#define NEON_PWM_FREQ_HZ 100
 #define NEON_PWM_RESOLUTION_BITS 10
 #define NEON_PWM_MAX_DUTY ((1 << NEON_PWM_RESOLUTION_BITS) - 1)
 #define NEON_PWM_CHANNEL_1 0
 #define NEON_PWM_CHANNEL_2 1
-#define NEON_BRIGHTNESS_PERCENT 50
+#define NEON_BRIGHTNESS_PERCENT 70
 #define NEON_HALF_PERIOD_MS 500
 
 // RTC config
@@ -219,9 +218,13 @@ static void sync_neons(const DateTime& now, uint32_t second_started_ms) {
     set_neons_enabled(neons_should_be_enabled(now, second_started_ms));
 }
 
+void clock_set_neon_pwm_frequency(uint32_t frequency) {
+    ledcSetup(NEON_PWM_CHANNEL_1, frequency, NEON_PWM_RESOLUTION_BITS);
+    ledcSetup(NEON_PWM_CHANNEL_2, frequency, NEON_PWM_RESOLUTION_BITS);
+}
+
 static void setup_neon_pwm() {
-    ledcSetup(NEON_PWM_CHANNEL_1, NEON_PWM_FREQ_HZ, NEON_PWM_RESOLUTION_BITS);
-    ledcSetup(NEON_PWM_CHANNEL_2, NEON_PWM_FREQ_HZ, NEON_PWM_RESOLUTION_BITS);
+    clock_set_neon_pwm_frequency(config.neons_frequency);
     ledcAttachPin(PIN_NEON_1, NEON_PWM_CHANNEL_1);
     ledcAttachPin(PIN_NEON_2, NEON_PWM_CHANNEL_2);
     set_neons_enabled(false);
@@ -231,6 +234,7 @@ static void init_rtc() {
     start_scan_timer();
 
     rtc_available = rtc.begin(&Wire);
+    delay(100); // Make sure to wait until RTC is available...
     if (!rtc_available) {
         Serial.println("DS3231 not found");
         clock_set_display(999999);

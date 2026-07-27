@@ -24,6 +24,7 @@ export interface ClockConfig {
     healingMode: boolean;
     neonsMode: number;
     acpRoutine: number;
+    neonsFrequency: number;
 }
 
 export type ClockConfigUpdate = Partial<ClockConfig>;

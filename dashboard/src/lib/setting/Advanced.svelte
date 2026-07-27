@@ -9,6 +9,7 @@
 
     let ntpServer = $state("");
     let ntpFrequency = $state("");
+    let neonsFrequency = $state("");
     let healingMode = $state(false);
 
     onMount(async () => {
@@ -17,6 +18,7 @@
         ntpServer = config.ntpServer;
         ntpFrequency = config.ntpFrequency.toString();
         healingMode = config.healingMode;
+        neonsFrequency = config.neonsFrequency.toString();
     });
 
     async function handleNtpServerChange() {
@@ -90,6 +92,26 @@
             };
         }
     }
+
+    async function handleNeonsFrequencyChange() {
+        if (neonsFrequency === "") return;
+
+        try {
+            const response = await updateConfig({
+                neonsFrequency: parseInt(neonsFrequency),
+            });
+            neonsFrequency = response.neonsFrequency.toString();
+            $notification = {
+                severity: "normal",
+                message: `Set neons PWM frequency to ${neonsFrequency} Hz`,
+            };
+        } catch (err: any) {
+            $notification = {
+                severity: "error",
+                message: err.toString(),
+            };
+        }
+    }
 </script>
 
 <SettingGroup title="Advanced">
@@ -113,6 +135,14 @@
         bind:value={healingMode}
         onchange={handleHealingModeChange}
     ></SwitchSetting>
+
+    <TextInputSetting
+        name="Neons PWM Frequency"
+        description="Selecting an appropriate frequency may help with flickering seconds indicators."
+        bind:value={neonsFrequency}
+        type="number"
+        onchange={handleNeonsFrequencyChange}
+    ></TextInputSetting>
 
     <Button name="Reset Clock Config" onclick={handleResetClockConfigClick}
     ></Button>

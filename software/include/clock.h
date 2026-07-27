@@ -25,3 +25,5 @@ void clock_set_display(uint32_t value);
 void clock_stop_acp_routine();
 
 void clock_start_acp_routine();
+
+void clock_set_neon_pwm_frequency(uint32_t frequency);

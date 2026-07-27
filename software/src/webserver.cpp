@@ -211,6 +211,10 @@ static bool apply_config_side_effects(const ClockConfig& next) {
         }
     }
 
+    if (next.neons_frequency != config.neons_frequency) {
+        clock_set_neon_pwm_frequency(config.neons_frequency);
+    }
+
     return true;
 }
 

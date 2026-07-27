@@ -9,23 +9,25 @@
     FIELD(wifi_ssid, "wifiSsid")    \
     FIELD(wifi_password, "wifiPassword")
 
-#define CONFIG_PUBLIC_FIELDS(FIELD)                              \
-    FIELD(timezone_posix, "timezonePosix")                       \
-    FIELD(timezone_iana, "timezoneIana")                         \
-    FIELD(time_display_format, "timeDisplayFormat")              \
-    FIELD(automatic_time, "automaticTime")                       \
-    FIELD(timer, "timer")                                        \
-    FIELD(timer_tubes_off_hours, "tubesOffHours")                \
-    FIELD(timer_tubes_off_minutes, "tubesOffMinutes")            \
-    FIELD(timer_tubes_on_hours, "tubesOnHours")                  \
-    FIELD(timer_tubes_on_minutes, "tubesOnMinutes")              \
-    FIELD(ntp_server, "ntpServer")                               \
-    FIELD(ntp_frequency, "ntpFrequency")                         \
-    FIELD(healing_mode, "healingMode")                           \
-    FIELD(neons_mode, "neonsMode")                               \
-    FIELD(acp_routine, "acpRoutine")
+#define CONFIG_PUBLIC_FIELDS(FIELD)                   \
+    FIELD(timezone_posix, "timezonePosix")            \
+    FIELD(timezone_iana, "timezoneIana")              \
+    FIELD(time_display_format, "timeDisplayFormat")   \
+    FIELD(automatic_time, "automaticTime")            \
+    FIELD(timer, "timer")                             \
+    FIELD(timer_tubes_off_hours, "tubesOffHours")     \
+    FIELD(timer_tubes_off_minutes, "tubesOffMinutes") \
+    FIELD(timer_tubes_on_hours, "tubesOnHours")       \
+    FIELD(timer_tubes_on_minutes, "tubesOnMinutes")   \
+    FIELD(ntp_server, "ntpServer")                    \
+    FIELD(ntp_frequency, "ntpFrequency")              \
+    FIELD(healing_mode, "healingMode")                \
+    FIELD(neons_mode, "neonsMode")                    \
+    FIELD(acp_routine, "acpRoutine")                  \
+    FIELD(neons_frequency, "neonsFrequency")
 
-#define COPY2CONF(conf_name, doc_name) target.conf_name = document[doc_name] | target.conf_name;
+#define COPY2CONF(conf_name, doc_name) \
+    target.conf_name = document[doc_name] | target.conf_name;
 
 #define COPY2DOC(conf_name, doc_name) document[doc_name] = source.conf_name;
 
@@ -49,6 +51,7 @@ static void set_default_config() {
     config.healing_mode = false;
     config.neons_mode = CFG_NEONS_MODE_BLINK;
     config.acp_routine = 1;
+    config.neons_frequency = 1000;
 }
 
 void config_create_default() {
