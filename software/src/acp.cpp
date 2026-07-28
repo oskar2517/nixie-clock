@@ -12,12 +12,17 @@
 static void anti_cathode_poisoning_routine_basic() {
     static uint32_t last_step_millis = millis();
     static uint8_t step = 0;
+    static bool forwards = true;
 
     if (millis() - last_step_millis < ACP_STEP_INTERVAL_MS) return;
     last_step_millis = millis();
 
     if (step < 20) {
-        uint32_t n = (step % 10) * 111111;
+        uint8_t animation_step = (step % 10);
+        if (!forwards) {
+            animation_step = 9 - animation_step;
+        }
+        uint32_t n = animation_step * 111111;
 
         clock_set_display(n);
 
@@ -25,6 +30,7 @@ static void anti_cathode_poisoning_routine_basic() {
     } else {
         clock_stop_acp_routine();
         step = 0;
+        forwards = !forwards;
     }
 }
 
@@ -65,6 +71,7 @@ static void anti_cathode_poisoning_routine_sweep() {
 static void anti_cathode_poisoning_routine_additive() {
     static uint32_t last_step_millis = millis();
     static uint8_t step = 0;
+    static bool forwards = true;
 
     if (millis() - last_step_millis < ACP_STEP_INTERVAL_MS) return;
     last_step_millis = millis();
@@ -72,6 +79,7 @@ static void anti_cathode_poisoning_routine_additive() {
     if (step >= 20) {
         clock_stop_acp_routine();
         step = 0;
+        forwards = !forwards;
         return;
     }
 
@@ -81,7 +89,18 @@ static void anti_cathode_poisoning_routine_additive() {
 
     for (uint8_t i = 0; i < clock_digit_count; i++) {
         uint8_t new_digit = digits[i];
-        new_digit = (new_digit + 1) % 10;
+        uint8_t n;
+        if (forwards) {
+            n = (new_digit + 1) % 10;
+        } else {
+            n = new_digit;
+            if (n == 0) {
+                n = 10;
+            }
+            n--;
+        }
+
+        new_digit = n;
 
         digits[i] = new_digit;
     }
