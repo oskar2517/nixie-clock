@@ -62,7 +62,7 @@ static ClockConfig default_config() {
     next.acp_routine = 1;
     next.neons_frequency = 1000;
     next.neons_brightness = 70;
-    next.digit_cross_fade = true;
+    next.digit_cross_fade = false;
 
     return next;
 }
