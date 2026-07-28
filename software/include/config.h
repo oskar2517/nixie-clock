@@ -26,6 +26,7 @@ struct ClockConfig {
     uint32_t neons_frequency;
     uint16_t neons_brightness;
     int8_t acp_routine;
+    bool digit_cross_fade;
 };
 
 extern ClockConfig config;

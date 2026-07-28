@@ -28,7 +28,8 @@
     FIELD(neons_mode, "neonsMode")                    \
     FIELD(acp_routine, "acpRoutine")                  \
     FIELD(neons_frequency, "neonsFrequency")          \
-    FIELD(neons_brightness, "neonsBrightness")
+    FIELD(neons_brightness, "neonsBrightness")        \
+    FIELD(digit_cross_fade, "digitCrossFade")
 
 #define COPY2CONF(conf_name, doc_name) \
     target.conf_name = document[doc_name] | target.conf_name;
@@ -61,6 +62,7 @@ static ClockConfig default_config() {
     next.acp_routine = 1;
     next.neons_frequency = 1000;
     next.neons_brightness = 70;
+    next.digit_cross_fade = true;
 
     return next;
 }
