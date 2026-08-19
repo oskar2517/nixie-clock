@@ -11,13 +11,11 @@
 RTC_DS3231 rtc;
 static bool rtc_available = false;
 
-bool rtc_is_available() {
-    return rtc_available;
-}
+bool rtc_is_available() { return rtc_available; }
 
 bool rtc_init() {
-    rtc_available = rtc.begin(&Wire);
     delay(100);  // Make sure to wait until RTC is available...
+    rtc_available = rtc.begin(&Wire);
     if (!rtc_available) {
         Serial.println("DS3231 not found");
         return false;
