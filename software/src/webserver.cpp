@@ -247,7 +247,10 @@ static void handle_config_get(JsonDocument& request) {
 
 static void handle_config_post(JsonDocument& request) {
     ClockConfig next = config;
-    config_apply_json(next, request, false);
+    if (!config_apply_json(next, request, false) || !config_validate(next)) {
+        server.send(400);
+        return;
+    }
 
     if (!config_apply(next)) {
         server.send(500);

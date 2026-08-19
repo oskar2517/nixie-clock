@@ -37,7 +37,10 @@ bool config_save();
 
 void config_to_json(JsonDocument& document);
 
-void config_apply_json(ClockConfig& target, JsonDocument& document, bool include_secrets);
+bool config_apply_json(ClockConfig& target, JsonDocument& document,
+                       bool include_secrets);
+
+bool config_validate(const ClockConfig& candidate);
 
 bool config_apply(const ClockConfig& next);
 

@@ -1,12 +1,25 @@
 #include "config.h"
 
+#include <ctype.h>
+
 #include <ArduinoJson.h>
 #include <LittleFS.h>
 
+#include "acp.h"
 #include "clock.h"
 #include "rtc.h"
 
 #define CONFIG_FILE "/config.json"
+
+#define WIFI_SSID_MAX_LENGTH 32
+#define WIFI_PASSWORD_MAX_LENGTH 64
+#define TIMEZONE_POSIX_MAX_LENGTH 96
+#define TIMEZONE_IANA_MAX_LENGTH 64
+#define NTP_SERVER_MAX_LENGTH 253
+#define NTP_FREQUENCY_MIN_MINUTES 1
+#define NTP_FREQUENCY_MAX_MINUTES 10080
+#define NEONS_FREQUENCY_MIN_HZ 1
+#define NEONS_FREQUENCY_MAX_HZ 40000
 
 #define CONFIG_SECRET_FIELDS(FIELD) \
     FIELD(wifi_ssid, "wifiSsid")    \
@@ -31,16 +44,12 @@
     FIELD(neons_brightness, "neonsBrightness")        \
     FIELD(digit_cross_fade, "digitCrossFade")
 
-#define COPY2CONF(conf_name, doc_name) \
-    target.conf_name = document[doc_name] | target.conf_name;
-
 #define COPY2DOC(conf_name, doc_name) document[doc_name] = source.conf_name;
 
 ClockConfig config;
 
 static bool config_apply_side_effects(const ClockConfig& next);
 
-// TODO: Implement config validation
 static ClockConfig default_config() {
     ClockConfig next;
 
@@ -81,17 +90,65 @@ static void config_to_json(const ClockConfig& source, JsonDocument& document,
     CONFIG_PUBLIC_FIELDS(COPY2DOC)
 }
 
+template <typename T>
+static bool copy_json_field(JsonDocument& document, const char* name,
+                            T& target) {
+    JsonObjectConst object = document.as<JsonObjectConst>();
+    JsonVariantConst value = object[name];
+    if (value.isUnbound()) {
+        return true;
+    }
+
+    if (value.isNull() || !value.is<T>()) {
+        return false;
+    }
+
+    target = value.as<T>();
+    return true;
+}
+
 void config_to_json(JsonDocument& document) {
     config_to_json(config, document, false);
 }
 
-void config_apply_json(ClockConfig& target, JsonDocument& document,
+bool config_apply_json(ClockConfig& target, JsonDocument& document,
                        bool include_secrets) {
-    if (include_secrets) {
-        CONFIG_SECRET_FIELDS(COPY2CONF)
+    if (!document.is<JsonObject>()) {
+        return false;
     }
 
-    CONFIG_PUBLIC_FIELDS(COPY2CONF)
+    if (include_secrets) {
+        if (!copy_json_field(document, "wifiSsid", target.wifi_ssid) ||
+            !copy_json_field(document, "wifiPassword", target.wifi_password)) {
+            return false;
+        }
+    }
+
+    return copy_json_field(document, "timezonePosix", target.timezone_posix) &&
+           copy_json_field(document, "timezoneIana", target.timezone_iana) &&
+           copy_json_field(document, "timeDisplayFormat",
+                           target.time_display_format) &&
+           copy_json_field(document, "automaticTime", target.automatic_time) &&
+           copy_json_field(document, "timer", target.timer) &&
+           copy_json_field(document, "tubesOffHours",
+                           target.timer_tubes_off_hours) &&
+           copy_json_field(document, "tubesOffMinutes",
+                           target.timer_tubes_off_minutes) &&
+           copy_json_field(document, "tubesOnHours",
+                           target.timer_tubes_on_hours) &&
+           copy_json_field(document, "tubesOnMinutes",
+                           target.timer_tubes_on_minutes) &&
+           copy_json_field(document, "ntpServer", target.ntp_server) &&
+           copy_json_field(document, "ntpFrequency", target.ntp_frequency) &&
+           copy_json_field(document, "healingMode", target.healing_mode) &&
+           copy_json_field(document, "neonsMode", target.neons_mode) &&
+           copy_json_field(document, "acpRoutine", target.acp_routine) &&
+           copy_json_field(document, "neonsFrequency",
+                           target.neons_frequency) &&
+           copy_json_field(document, "neonsBrightness",
+                           target.neons_brightness) &&
+           copy_json_field(document, "digitCrossFade",
+                           target.digit_cross_fade);
 }
 
 bool config_save() {
@@ -148,13 +205,22 @@ void config_load() {
     }
 
     ClockConfig next = default_config();
-    config_apply_json(next, document, true);
+    if (!config_apply_json(next, document, true) || !config_validate(next)) {
+        Serial.println("Config file contains invalid values");
+        load_default_config();
+        return;
+    }
+
     config = next;
 
     Serial.println("Loaded config file successfully");
 }
 
 bool config_apply(const ClockConfig& next) {
+    if (!config_validate(next)) {
+        return false;
+    }
+
     if (!config_apply_side_effects(next)) {
         return false;
     }
@@ -169,6 +235,87 @@ bool config_reset_to_default() {
     }
 
     Serial.println("Reset config to defaults");
+
+    return true;
+}
+
+static bool text_field_is_valid(const String& value, size_t max_length,
+                                bool allow_empty) {
+    if (!allow_empty && value.length() == 0) {
+        return false;
+    }
+
+    if (value.length() > max_length) {
+        return false;
+    }
+
+    for (size_t i = 0; i < value.length(); i++) {
+        uint8_t c = static_cast<uint8_t>(value[i]);
+        if (c < 32 || c == 127) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+static bool host_field_is_valid(const String& value) {
+    if (!text_field_is_valid(value, NTP_SERVER_MAX_LENGTH, false)) {
+        return false;
+    }
+
+    for (size_t i = 0; i < value.length(); i++) {
+        if (isspace(static_cast<unsigned char>(value[i]))) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool config_validate(const ClockConfig& candidate) {
+    if (!text_field_is_valid(candidate.wifi_ssid, WIFI_SSID_MAX_LENGTH, true) ||
+        !text_field_is_valid(candidate.wifi_password,
+                             WIFI_PASSWORD_MAX_LENGTH, true) ||
+        !text_field_is_valid(candidate.timezone_posix,
+                             TIMEZONE_POSIX_MAX_LENGTH, false) ||
+        !text_field_is_valid(candidate.timezone_iana, TIMEZONE_IANA_MAX_LENGTH,
+                             false) ||
+        !host_field_is_valid(candidate.ntp_server)) {
+        return false;
+    }
+
+    if (candidate.time_display_format != 12 &&
+        candidate.time_display_format != 24) {
+        return false;
+    }
+
+    if (candidate.timer_tubes_off_hours > 23 ||
+        candidate.timer_tubes_on_hours > 23 ||
+        candidate.timer_tubes_off_minutes > 59 ||
+        candidate.timer_tubes_on_minutes > 59) {
+        return false;
+    }
+
+    if (candidate.ntp_frequency < NTP_FREQUENCY_MIN_MINUTES ||
+        candidate.ntp_frequency > NTP_FREQUENCY_MAX_MINUTES) {
+        return false;
+    }
+
+    if (candidate.neons_mode > CFG_NEONS_MODE_TOGGLE) {
+        return false;
+    }
+
+    if (candidate.acp_routine < -1 ||
+        candidate.acp_routine >= static_cast<int8_t>(acp_routine_count)) {
+        return false;
+    }
+
+    if (candidate.neons_frequency < NEONS_FREQUENCY_MIN_HZ ||
+        candidate.neons_frequency > NEONS_FREQUENCY_MAX_HZ ||
+        candidate.neons_brightness > 100) {
+        return false;
+    }
 
     return true;
 }
