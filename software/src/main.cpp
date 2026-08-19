@@ -21,7 +21,10 @@ void setup() {
 
     filesystem_setup();
     config_load();
-    clock_setup();
+    if (!clock_setup()) {
+        Serial.println("Failed to initialize clock");
+        return;
+    }
     wifi_ap_setup();
     mdns_setup();
     webserver_setup();

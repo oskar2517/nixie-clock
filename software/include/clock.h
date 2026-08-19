@@ -4,7 +4,7 @@
 
 extern const uint8_t clock_digit_count;
 
-void clock_setup();
+bool clock_setup();
 
 void clock_update();
 

@@ -448,7 +448,7 @@ void clock_update() {
     }
 }
 
-void clock_setup() {
+bool clock_setup() {
     setup_pins(anode_pins, clock_digit_count);
     setup_pins(cathode_pins, 10);
     setup_neon_pwm();
@@ -456,11 +456,12 @@ void clock_setup() {
     start_scan_timer();
 
     if (!rtc_init()) {
-        clock_set_display(999999);
-        return;
+        return false;
     }
 
     DateTime now = rtc.now();
     clock_set_display(time_display_value(now));
     sync_neons(now, millis());
+
+    return true;
 }
