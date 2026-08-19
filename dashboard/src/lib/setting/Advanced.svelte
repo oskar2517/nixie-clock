@@ -4,7 +4,10 @@
     import SwitchSetting from "./settings/SwitchSetting.svelte";
     import TextInputSetting from "./settings/TextInputSetting.svelte";
     import { getConfig, resetConfig, updateConfig } from "../../api";
-    import { notification } from "./common/notification_store";
+    import {
+        notification,
+        notificationErrorMessage,
+    } from "./common/notification_store";
     import Button from "./settings/Button.svelte";
 
     let ntpServer = $state("");
@@ -38,7 +41,7 @@
         } catch (err: any) {
             $notification = {
                 severity: "error",
-                message: err.toString(),
+                message: notificationErrorMessage(err),
             };
         }
     }
@@ -53,12 +56,12 @@
             ntpFrequency = response.ntpFrequency.toString();
             $notification = {
                 severity: "normal",
-                message: `Set NTP sychronization frequency to ${ntpFrequency} minutes`,
+                message: `Set NTP sync to ${ntpFrequency} min`,
             };
         } catch (err: any) {
             $notification = {
                 severity: "error",
-                message: err.toString(),
+                message: notificationErrorMessage(err),
             };
         }
     }
@@ -78,7 +81,7 @@
         } catch (err: any) {
             $notification = {
                 severity: "error",
-                message: err.toString(),
+                message: notificationErrorMessage(err),
             };
         }
     }
@@ -90,7 +93,7 @@
         } catch (err: any) {
             $notification = {
                 severity: "error",
-                message: err.toString(),
+                message: notificationErrorMessage(err),
             };
         }
     }
@@ -105,12 +108,12 @@
             neonsFrequency = response.neonsFrequency.toString();
             $notification = {
                 severity: "normal",
-                message: `Set neons PWM frequency to ${neonsFrequency} Hz`,
+                message: `Set neons PWM to ${neonsFrequency} Hz`,
             };
         } catch (err: any) {
             $notification = {
                 severity: "error",
-                message: err.toString(),
+                message: notificationErrorMessage(err),
             };
         }
     }
@@ -130,7 +133,7 @@
         } catch (err: any) {
             $notification = {
                 severity: "error",
-                message: err.toString(),
+                message: notificationErrorMessage(err),
             };
         }
     }

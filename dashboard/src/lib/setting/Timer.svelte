@@ -1,7 +1,10 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { getConfig, updateConfig } from "../../api";
-    import { notification } from "./common/notification_store";
+    import {
+        notification,
+        notificationErrorMessage,
+    } from "./common/notification_store";
     import SettingGroup from "./settings/SettingGroup.svelte";
     import SwitchSetting from "./settings/SwitchSetting.svelte";
     import TextInputSetting from "./settings/TextInputSetting.svelte";
@@ -36,12 +39,12 @@
             tubesOnTime = joinTime(response.tubesOnHours, response.tubesOnMinutes);
             $notification = {
                 severity: "normal",
-                message: `Set timer interval to ${tubesOffTime} - ${tubesOnTime}.`,
+                message: `Set timer to ${tubesOffTime} - ${tubesOnTime}`,
             };
         } catch (err: any) {
             $notification = {
                 severity: "error",
-                message: err.toString(),
+                message: notificationErrorMessage(err),
             };
         }
     }
@@ -59,7 +62,7 @@
         } catch (err: any) {
             $notification = {
                 severity: "error",
-                message: err.toString(),
+                message: notificationErrorMessage(err),
             };
         }
     }

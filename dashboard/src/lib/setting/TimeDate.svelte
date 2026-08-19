@@ -12,7 +12,10 @@
     } from "../../api";
     import { convertIanaToPosix } from "../../util/posix_ts";
     import { onMount } from "svelte";
-    import { notification } from "./common/notification_store";
+    import {
+        notification,
+        notificationErrorMessage,
+    } from "./common/notification_store";
 
     const timezones = Object.keys(ct.getAllTimezones());
 
@@ -27,12 +30,12 @@
             await syncTime(timestamp);
             $notification = {
                 severity: "normal",
-                message: "Successfully set time",
+                message: "Set time",
             };
         } catch (err: any) {
             $notification = {
                 severity: "error",
-                message: err.toString(),
+                message: notificationErrorMessage(err),
             };
         }
     }
@@ -45,7 +48,7 @@
         if (!timezonePosix) {
             $notification = {
                 severity: "error",
-                message: `Could not convert timezone ${timezoneIana} to Posix`,
+                message: "Unsupported timezone",
             };
             return;
         }
@@ -58,12 +61,12 @@
             timezoneIana = response.timezoneIana;
             $notification = {
                 severity: "normal",
-                message: `Successully updated timezone to ${timezoneIana} (${timezonePosix})`,
+                message: `Set timezone to ${timezoneIana}`,
             };
         } catch (err: any) {
             $notification = {
                 severity: "error",
-                message: err.toString(),
+                message: notificationErrorMessage(err),
             };
         }
     }
@@ -80,12 +83,12 @@
                 response.timeDisplayFormat === 24 ? "24-hour" : "12-hour";
             $notification = {
                 severity: "normal",
-                message: `Successfully changed time display format to ${timeDisplayFormat}`,
+                message: `Set time format to ${timeDisplayFormat}`,
             };
         } catch (err: any) {
             $notification = {
                 severity: "error",
-                message: err.toString(),
+                message: notificationErrorMessage(err),
             };
         }
     }
@@ -99,13 +102,13 @@
             $notification = {
                 severity: "normal",
                 message: automaticTime
-                    ? "Enabled setting time automatically"
-                    : "Disabled setting time automatically",
+                    ? "Enabled automatic time"
+                    : "Disabled automatic time",
             };
         } catch (err: any) {
             $notification = {
                 severity: "error",
-                message: err.toString(),
+                message: notificationErrorMessage(err),
             };
         }
     }

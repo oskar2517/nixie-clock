@@ -11,7 +11,10 @@
         scanWifiNetworks,
     } from "../../api";
     import { onMount } from "svelte";
-    import { notification } from "./common/notification_store";
+    import {
+        notification,
+        notificationErrorMessage,
+    } from "./common/notification_store";
     import Group from "./common/Group.svelte";
 
     let ssid = $state("");
@@ -48,7 +51,7 @@
         } catch (err: any) {
             $notification = {
                 severity: "error",
-                message: err.toString(),
+                message: notificationErrorMessage(err),
             };
             connecting = false;
             password = "";
@@ -63,7 +66,7 @@
         } catch (err: any) {
             $notification = {
                 severity: "error",
-                message: err.toString(),
+                message: notificationErrorMessage(err),
             };
             reset();
         }
@@ -78,7 +81,7 @@
         } catch (err: any) {
             $notification = {
                 severity: "error",
-                message: err.toString(),
+                message: notificationErrorMessage(err),
             };
             reset();
         }

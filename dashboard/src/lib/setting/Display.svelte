@@ -3,7 +3,10 @@
     import SelectSetting from "./settings/SelectSetting.svelte";
     import SettingGroup from "./settings/SettingGroup.svelte";
     import { getConfig, runAcpRoutine, updateConfig } from "../../api";
-    import { notification } from "./common/notification_store";
+    import {
+        notification,
+        notificationErrorMessage,
+    } from "./common/notification_store";
     import Button from "./settings/Button.svelte";
     import SwitchSetting from "./settings/SwitchSetting.svelte";
 
@@ -32,12 +35,12 @@
             neonsMode = neonsModes[response.neonsMode];
             $notification = {
                 severity: "normal",
-                message: `Set neons mode to ${neonsMode}`,
+                message: `Set neons to ${neonsMode.toLowerCase()}`,
             };
         } catch (err: any) {
             $notification = {
                 severity: "error",
-                message: err.toString(),
+                message: notificationErrorMessage(err),
             };
         }
     }
@@ -52,12 +55,12 @@
             acpRoutine = acpRoutines[response.acpRoutine] ?? ACP_CYCLE_THROUGH;
             $notification = {
                 severity: "normal",
-                message: `Set ACP mode to ${acpRoutine}`,
+                message: `Set ACP to ${acpRoutine.replace(/[<>]/g, "").toLowerCase()}`,
             };
         } catch (err: any) {
             $notification = {
                 severity: "error",
-                message: err.toString(),
+                message: notificationErrorMessage(err),
             };
         }
     }
@@ -75,7 +78,7 @@
         } catch (err: any) {
             $notification = {
                 severity: "error",
-                message: err.toString(),
+                message: notificationErrorMessage(err),
             };
         }
     }
