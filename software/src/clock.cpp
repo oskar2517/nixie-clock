@@ -1,10 +1,11 @@
+#include "clock.h"
+
 #include "RTClib.h"
 #include "acp.h"
 #include "config.h"
 #include "main.h"
 #include "pins.h"
 #include "rtc.h"
-
 #include "soc/gpio_struct.h"
 
 // Multiplexing config
@@ -329,6 +330,15 @@ static uint32_t time_display_value(const DateTime& now) {
     return (hour * 10000UL) + (now.minute() * 100UL) + now.second();
 }
 
+bool clock_get_current_time_digits(uint8_t* digits) {
+    if (!rtc_is_available()) {
+        return false;
+    }
+
+    display_value_to_digits(time_display_value(rtc.now()), digits);
+    return true;
+}
+
 static uint32_t neon_duty_from_percent(uint16_t percent) {
     if (percent > 100) {
         percent = 100;
@@ -425,7 +435,7 @@ void clock_update() {
         set_hv_enabled(!tubes_should_sleep(now));
 
         if (now_s != last_second) {
-            last_second = now.second();
+            last_second = now_s;
             second_started_ms = now_ms;
             clock_set_display(time_display_value(now));
         }

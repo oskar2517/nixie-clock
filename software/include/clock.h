@@ -16,6 +16,8 @@ void clock_set_display_digits(const uint8_t* digits);
 
 void clock_set_display(uint32_t value);
 
+bool clock_get_current_time_digits(uint8_t* digits);
+
 void clock_stop_acp_routine();
 
 void clock_start_acp_routine();

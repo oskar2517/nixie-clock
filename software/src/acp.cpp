@@ -6,8 +6,13 @@
 
 #define ACP_STEP_INTERVAL_MS 50
 #define ACP_DIGIT_VALUES 10
-#define ACP_MAX_DIGITS 8
 #define ACP_SLOT_STEPS_PER_DIGIT ACP_DIGIT_VALUES
+
+static void get_base_display_digits(uint8_t* digits) {
+    if (!clock_get_current_time_digits(digits)) {
+        clock_get_display_digits(digits);
+    }
+}
 
 static void anti_cathode_poisoning_routine_basic() {
     static uint32_t last_step_millis = millis();
@@ -44,28 +49,33 @@ static void anti_cathode_poisoning_routine_sweep() {
 
     uint8_t digits[clock_digit_count];
 
-    clock_get_display_digits(digits);
+    uint8_t sweep_duration = (clock_digit_count - 1) * 5 + 20;
+
+    if (step >= sweep_duration) {
+        get_base_display_digits(digits);
+        clock_set_display_digits(digits);
+        clock_stop_acp_routine();
+        step = 0;
+        left_to_right = !left_to_right;
+        return;
+    }
+
+    get_base_display_digits(digits);
 
     for (uint8_t i = 0; i < clock_digit_count; i++) {
         uint8_t digit_index = left_to_right ? i : clock_digit_count - i - 1;
         uint8_t new_digit = digits[digit_index];
 
         if (step >= i * 5 && step < i * 5 + 20) {
-            new_digit = (new_digit + 1) % 10;
+            uint8_t active_step = step - i * 5;
+            new_digit = (new_digit + active_step + 1) % 10;
         }
 
         digits[digit_index] = new_digit;
     }
 
     clock_set_display_digits(digits);
-
-    if (step < clock_digit_count * 10) {
-        step++;
-    } else {
-        clock_stop_acp_routine();
-        step = 0;
-        left_to_right = !left_to_right;
-    }
+    step++;
 }
 
 static void anti_cathode_poisoning_routine_additive() {
@@ -85,22 +95,18 @@ static void anti_cathode_poisoning_routine_additive() {
 
     uint8_t digits[clock_digit_count];
 
-    clock_get_display_digits(digits);
+    get_base_display_digits(digits);
 
     for (uint8_t i = 0; i < clock_digit_count; i++) {
         uint8_t new_digit = digits[i];
-        uint8_t n;
-        if (forwards) {
-            n = (new_digit + 1) % 10;
-        } else {
-            n = new_digit;
-            if (n == 0) {
-                n = 10;
-            }
-            n--;
-        }
+        uint8_t offset = (step + 1) % ACP_DIGIT_VALUES;
 
-        new_digit = n;
+        if (forwards) {
+            new_digit = (new_digit + offset) % ACP_DIGIT_VALUES;
+        } else {
+            new_digit =
+                (new_digit + ACP_DIGIT_VALUES - offset) % ACP_DIGIT_VALUES;
+        }
 
         digits[i] = new_digit;
     }
@@ -112,26 +118,21 @@ static void anti_cathode_poisoning_routine_additive() {
 static void anti_cathode_poisoning_routine_slot_machine() {
     static uint32_t last_step_millis = millis();
     static uint8_t step = 0;
-    static uint8_t target_digits[ACP_MAX_DIGITS];
-    static bool started = false;
     static bool left_to_right = true;
-
-    if (!started) {
-        clock_get_display_digits(target_digits);
-        step = 0;
-        started = true;
-    }
 
     if (millis() - last_step_millis < ACP_STEP_INTERVAL_MS) return;
     last_step_millis = millis();
 
     uint8_t locked_digits = step / ACP_SLOT_STEPS_PER_DIGIT;
+    uint8_t target_digits[clock_digit_count];
+
+    get_base_display_digits(target_digits);
 
     if (locked_digits >= clock_digit_count) {
         clock_set_display_digits(target_digits);
         clock_stop_acp_routine();
-        started = false;
         left_to_right = !left_to_right;
+        step = 0;
         return;
     }
 
@@ -161,7 +162,7 @@ static void anti_cathode_poisoning_routine_centroid() {
 
     uint8_t digits[clock_digit_count];
 
-    clock_get_display_digits(digits);
+    get_base_display_digits(digits);
 
     uint8_t center = clock_digit_count / 2;
 
@@ -173,8 +174,9 @@ static void anti_cathode_poisoning_routine_centroid() {
         uint8_t d2 = digits[i2];
 
         if (step >= i * 5 && step < i * 5 + 20) {
-            d1 = (d1 + 1) % 10;
-            d2 = (d2 + 1) % 10;
+            uint8_t active_step = step - i * 5;
+            d1 = (d1 + active_step + 1) % 10;
+            d2 = (d2 + active_step + 1) % 10;
         }
 
         digits[i1] = d1;
