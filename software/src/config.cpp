@@ -190,6 +190,7 @@ void config_load() {
     if (!file || file.isDirectory()) {
         Serial.println("Failed to open config file for reading");
         load_default_config();
+        config_save();
         return;
     }
 
@@ -201,6 +202,7 @@ void config_load() {
         Serial.print("Failed to parse config file: ");
         Serial.println(error.c_str());
         load_default_config();
+        config_save();
         return;
     }
 
@@ -208,6 +210,7 @@ void config_load() {
     if (!config_apply_json(next, document, true) || !config_validate(next)) {
         Serial.println("Config file contains invalid values");
         load_default_config();
+        config_save();
         return;
     }
 
