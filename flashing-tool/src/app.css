@@ -1,0 +1,31 @@
+@font-face {
+    font-family: "JetBrains Mono";
+    src: url("assets/font/JetBrainsMono-Regular.ttf") format("truetype");
+    font-weight: 400;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "JetBrains Mono";
+    src: url("assets/font/JetBrainsMono-Bold.ttf") format("truetype");
+    font-weight: 700;
+    font-style: normal;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    --highlight-color: #e8ae04;
+    --text-color: #ced3d8;
+}
+
+body {
+    background-color: #1f1f1f;
+    font-family: "JetBrains Mono", sans-serif;
+    color: var(--text-color);
+    font-weight: 400;
+}
