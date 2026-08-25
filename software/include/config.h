@@ -27,6 +27,7 @@ struct ClockConfig {
     uint16_t neons_brightness;
     int8_t acp_routine;
     bool digit_cross_fade;
+    String wifi_ap_password;
 };
 
 extern ClockConfig config;

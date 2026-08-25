@@ -21,9 +21,10 @@
 #define NEONS_FREQUENCY_MIN_HZ 1
 #define NEONS_FREQUENCY_MAX_HZ 40000
 
-#define CONFIG_SECRET_FIELDS(FIELD) \
-    FIELD(wifi_ssid, "wifiSsid")    \
-    FIELD(wifi_password, "wifiPassword")
+#define CONFIG_SECRET_FIELDS(FIELD)           \
+    FIELD(wifi_ssid, "wifiSsid")              \
+    FIELD(wifi_password, "wifiPassword")      \
+    FIELD(wifi_ap_password, "wifiApPassword")
 
 #define CONFIG_PUBLIC_FIELDS(FIELD)                   \
     FIELD(timezone_posix, "timezonePosix")            \
@@ -72,6 +73,7 @@ static ClockConfig default_config() {
     next.neons_frequency = 1000;
     next.neons_brightness = 70;
     next.digit_cross_fade = false;
+    next.wifi_ap_password = "";
 
     return next;
 }
@@ -119,7 +121,8 @@ bool config_apply_json(ClockConfig& target, JsonDocument& document,
 
     if (include_secrets) {
         if (!copy_json_field(document, "wifiSsid", target.wifi_ssid) ||
-            !copy_json_field(document, "wifiPassword", target.wifi_password)) {
+            !copy_json_field(document, "wifiPassword", target.wifi_password) ||
+            !copy_json_field(document, "wifiApPassword", target.wifi_ap_password)) {
             return false;
         }
     }
@@ -280,11 +283,18 @@ bool config_validate(const ClockConfig& candidate) {
     if (!text_field_is_valid(candidate.wifi_ssid, WIFI_SSID_MAX_LENGTH, true) ||
         !text_field_is_valid(candidate.wifi_password,
                              WIFI_PASSWORD_MAX_LENGTH, true) ||
+        !text_field_is_valid(candidate.wifi_ap_password,
+                             WIFI_PASSWORD_MAX_LENGTH, true) ||
         !text_field_is_valid(candidate.timezone_posix,
                              TIMEZONE_POSIX_MAX_LENGTH, false) ||
         !text_field_is_valid(candidate.timezone_iana, TIMEZONE_IANA_MAX_LENGTH,
                              false) ||
         !host_field_is_valid(candidate.ntp_server)) {
+        return false;
+    }
+
+    if (candidate.wifi_ap_password.length() > 0 &&
+        candidate.wifi_ap_password.length() < 8) {
         return false;
     }
 

@@ -4,6 +4,12 @@
 
 #include "config.h"
 
+String get_wifi_ap_password() {
+    if (config.wifi_ap_password.length() > 0) return config.wifi_ap_password;
+
+    return WIFI_AP_PASSWORD;
+}
+
 bool wifi_connect_with_config_credentials() {
     if (config.wifi_ssid.length() == 0) {
         return false;
@@ -48,7 +54,7 @@ void wifi_ap_setup() {
     Serial.println("Setting access point...");
 
     WiFi.mode(WIFI_AP);
-    if (!WiFi.softAP(WIFI_AP_SSID, WIFI_AP_PASSWORD)) {
+    if (!WiFi.softAP(WIFI_AP_SSID, get_wifi_ap_password())) {
         Serial.println("Failed to setup access point");
         return;
     }
