@@ -1,15 +1,26 @@
+#include "main.h"
+
 #include <Arduino.h>
+#include <LittleFS.h>
 #include <Wire.h>
 
 #include "clock.h"
+#include "clock_mdns.h"
 #include "config.h"
 #include "filesystem.h"
-#include "clock_mdns.h"
 #include "pins.h"
 #include "webserver.h"
 #include "wifi.h"
 
 void set_hv_enabled(bool enabled) { digitalWrite(PIN_SHDN, enabled); }
+
+void write_version_to_file() {
+    File file = LittleFS.open("/VERSION", FILE_WRITE);
+    if (!file) return;
+
+    file.print(FIRMWARE_VERSION);
+    file.close();
+}
 
 void setup() {
     setup_pin(PIN_SHDN);
@@ -19,7 +30,11 @@ void setup() {
 
     Wire.begin(PIN_SDA, PIN_SCL);
 
-    filesystem_setup();
+    if (!filesystem_setup()) {
+        Serial.println("LittleFS mount failed");
+        return;
+    }
+    write_version_to_file();
     config_load();
     if (!clock_setup()) {
         Serial.println("Failed to initialize clock");

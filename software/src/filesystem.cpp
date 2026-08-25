@@ -2,10 +2,12 @@
 
 bool filesystem_available = false;
 
-void filesystem_setup() {
+bool filesystem_setup() {
     filesystem_available = LittleFS.begin(false);
 
     if (!filesystem_available) {
-        Serial.println("LittleFS mount failed");
+        return false;
     }
+
+    return true;
 }
