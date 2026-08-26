@@ -1,4 +1,4 @@
-const DEFAULT_WASM_URL = "littlefs.async.wasm";
+const DEFAULT_WASM_URL = `${import.meta.env.BASE_URL}littlefs.async.wasm`;
 const MAX_ATTRIBUTE_TAGS = 256;
 const DEFAULT_BUFFER_SIZE = 8192;
 const READ_ONLY_ERROR = -5;
