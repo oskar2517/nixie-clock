@@ -368,5 +368,6 @@
         margin: 0 auto;
         width: 900px;
         max-width: 98vw;
+        margin-bottom: 50px;
     }
 </style>
