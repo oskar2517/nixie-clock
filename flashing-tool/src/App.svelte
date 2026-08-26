@@ -183,7 +183,7 @@
                 `Downloading firmware release ${selectedRelease}...`,
             );
 
-            // TODO: Don't use hardcoded esp32s3 release.
+            // TODO: Don't use hardcoded esp32s3 release..
             const relevantFirmware = relevantRelease.assets.firmware.esp32s3;
 
             if (!relevantFirmware) throw new Error("Firmware not found!");
