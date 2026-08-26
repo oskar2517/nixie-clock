@@ -11,6 +11,10 @@ export interface EspConnection {
     chipName: string;
 }
 
+export interface ClockConfig {
+    wifiApPassword: string;
+}
+
 type DumpProgress = (packet: Uint8Array<ArrayBufferLike>, progress: number, totalSize: number) => void;
 
 type FlashProgress = (fileIndex: number, written: number, total: number) => void;
@@ -153,5 +157,12 @@ export async function readInstalledFirmwareVersion(lfs: LittleFsImageReader): Pr
     } catch (err) {
         return null;
     }
+}
 
+export async function readClockConfig(lfs: LittleFsImageReader): Promise<ClockConfig> {
+    const config = JSON.parse(
+        new TextDecoder().decode(await lfs.readFile("/config.json")),
+    );
+
+    return config;
 }

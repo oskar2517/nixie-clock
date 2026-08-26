@@ -1,7 +1,7 @@
 #pragma once
 
 #define WIFI_AP_SSID "Nixie Clock"
-#define WIFI_AP_PASSWORD "123456pass"
+#define WIFI_AP_PASSWORD "M30Y9qq626jk"
 
 void wifi_ap_setup();
 

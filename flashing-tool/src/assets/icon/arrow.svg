@@ -10,8 +10,7 @@
 
 <g transform="matrix(1.3333 0 0 1.3333 0 0)">
 	<g clip-path="url(#1)" >
-    <path id=""  transform="matrix(1 0 0 -1 0 600)"  d="M150.00003 449.99997L150.00003 449.99997L150.00003 449.99997L300 300L300 300L300 300L300 300L450 449.99997" stroke="#CED3D8" stroke-width="50" stroke-linejoin="miter" fill="none" />
-    <path id=""  transform="matrix(1 0 0 -1 0 600)"  d="M150.00003 300L150.00003 300L150.00003 300L300 150L300 150L300 150L300 150L450 300" stroke="#CED3D8" stroke-width="50" stroke-linejoin="miter" fill="none" />
+    <path id=""  transform="matrix(1 0 0 -1 0 600)"  d="M150.00003 375L150.00003 375L150.00003 375L300 224.99998L300 224.99998L300 224.99998L300 224.99998L450 375" stroke="#CED3D8" stroke-width="50" stroke-linejoin="miter" fill="none" />
 	</g>
 </g>
 </svg>

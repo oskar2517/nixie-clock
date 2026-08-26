@@ -1,6 +1,7 @@
 <script lang="ts">
     import { tick } from "svelte";
     import Category from "./Category.svelte";
+    import Hr from "./Hr.svelte";
 
     let log = $state<string[]>([]);
     let messagesElement: HTMLDivElement | undefined = $state(undefined);
@@ -42,6 +43,8 @@
 </script>
 
 {#if log.length > 0}
+    <Hr></Hr>
+
     <Category title="Log" expanded={true}>
         <div class="messages" bind:this={messagesElement}>
             {#each log as message}

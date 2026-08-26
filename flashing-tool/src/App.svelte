@@ -9,8 +9,10 @@
         dumpPartition,
         flashPartition,
         mountLittleFs,
+        readClockConfig,
         readInstalledFirmwareVersion,
         readPartitionTable,
+        type ClockConfig,
         type EspConnection,
     } from "./lib/esp-interface";
     import Progress from "./lib/components/Progress.svelte";
@@ -28,7 +30,8 @@
     } from "./lib/littlefs";
     import { extractZipToLittleFs } from "./lib/zip";
     import TextInputSetting from "./lib/components/TextInputSetting.svelte";
-    import { fs } from "@zip.js/zip.js";
+    import Changelog from "./lib/components/Changelog.svelte";
+    import Hr from "./lib/components/Hr.svelte";
 
     interface TProgress {
         progress: number;
@@ -39,6 +42,8 @@
         chipName: string;
         installedFirmwareVersion: string;
     }
+
+    const WIFI_AP_PASSWORD_REGEX = "^[\\x20-\\x7E]+$";
 
     let log: Log;
     let littleFsData: Uint8Array<ArrayBufferLike> | undefined =
@@ -56,6 +61,8 @@
     let partitionTable: EspPartition[] = $state([]);
     let finished = $state(false);
     let wifiApPassword = $state("");
+    let clockConfig: ClockConfig | undefined = $state(undefined);
+    let changelog: string[] = $state([]);
 
     async function beginUpdate() {
         terminal = {
@@ -115,6 +122,10 @@
                 littleFsData,
             );
 
+            terminal.writeLine("Reading clock config...");
+            clockConfig = await readClockConfig(lfs);
+            wifiApPassword = clockConfig.wifiApPassword ?? "";
+
             const installedFirmwareVersion =
                 await readInstalledFirmwareVersion(lfs);
 
@@ -145,7 +156,8 @@
             connection === undefined ||
             lfs === undefined ||
             littleFsData === undefined ||
-            wifiApPassword.length < 8
+            wifiApPassword.length < 8 ||
+            clockConfig === undefined
         )
             return;
 
@@ -206,9 +218,11 @@
 
             terminal.writeLine("Patching little-fs...");
             terminal.writeLine("Patching config...");
-            const config = JSON.parse(new TextDecoder().decode(await lfs.readFile("/config.json")));
-            config.wifiApPassword = wifiApPassword;
-            await lfs.writeFile("/config.json", new TextEncoder().encode(JSON.stringify(config)));
+            clockConfig.wifiApPassword = wifiApPassword;
+            await lfs.writeFile(
+                "/config.json",
+                new TextEncoder().encode(JSON.stringify(clockConfig)),
+            );
 
             terminal.writeLine("Patching dashboard...");
 
@@ -284,11 +298,11 @@
         below.</Paragraph
     >
 
-    <hr />
+    <Hr></Hr>
 
     {#if error !== ""}
         <Paragraph highlight={true}>{error}</Paragraph>
-        <hr />
+        <Hr></Hr>
     {/if}
 
     {#if clockInfo !== undefined}
@@ -297,7 +311,7 @@
             ><E>Current Firmware Version:</E>
             {clockInfo.installedFirmwareVersion}</Paragraph
         >
-        <hr />
+        <Hr></Hr>
     {/if}
 
     {#if progress !== undefined}
@@ -312,17 +326,31 @@
     {#if readyToInstall}
         <SelectSetting
             name="Release"
+            description="This is the software version that will be installed. It is recommended to always use the latest version."
             options={availableReleases.map((r) => r.name)}
             bind:value={selectedRelease}
         ></SelectSetting>
 
+        <Changelog
+            changelog={availableReleases.find((r) => r.name === selectedRelease)
+                ?.changes ?? []}
+        ></Changelog>
+
         <TextInputSetting
             name="WiFi AP Password"
+            minLength={8}
+            maxLength={32}
+            pattern={WIFI_AP_PASSWORD_REGEX}
             bind:value={wifiApPassword}
+            description="This is the password that will be required to connect to the clock's configuration WiFi network."
             type="password"
         ></TextInputSetting>
 
-        <ButtonPrimary disabled={wifiApPassword.length < 8} name="Install Selected Release" onclick={installRelease}
+        <ButtonPrimary
+            disabled={wifiApPassword.length < 8 ||
+                !new RegExp(WIFI_AP_PASSWORD_REGEX).test(wifiApPassword)}
+            name="Install Selected Release"
+            onclick={installRelease}
         ></ButtonPrimary>
     {/if}
 
@@ -340,9 +368,5 @@
         margin: 0 auto;
         width: 900px;
         max-width: 98vw;
-    }
-
-    hr {
-        border: 1px solid #444;
     }
 </style>
