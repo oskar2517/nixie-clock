@@ -62,7 +62,6 @@
     let finished = $state(false);
     let wifiApPassword = $state("");
     let clockConfig: ClockConfig | undefined = $state(undefined);
-    let changelog: string[] = $state([]);
 
     async function beginUpdate() {
         terminal = {
