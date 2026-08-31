@@ -46,8 +46,8 @@ bool wifi_connect(const char* ssid, const char* password) {
 }
 
 void wifi_disconnect() {
-    WiFi.disconnect(false);
-    WiFi.mode(WIFI_AP_STA);
+    WiFi.disconnect(true);
+    WiFi.mode(WIFI_AP);
     WiFi.setTxPower(config.wifi_idle_transmission_power);
     Serial.println("WiFi disconnected.");
 }
@@ -55,7 +55,7 @@ void wifi_disconnect() {
 void wifi_ap_setup() {
     Serial.println("Setting access point...");
 
-    WiFi.mode(WIFI_AP_STA);
+    WiFi.mode(WIFI_AP);
     if (!WiFi.softAP(WIFI_AP_SSID, get_wifi_ap_password())) {
         Serial.println("Failed to setup access point");
         return;

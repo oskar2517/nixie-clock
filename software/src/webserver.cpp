@@ -21,6 +21,7 @@
 static WebServer server(80);
 static DNSServer dns_server;
 static bool wifi_scan_running = false;
+static bool wifi_scan_transmission_power_increased = false;
 
 static bool request_from_access_point() {
     return server.client().localIP() == WiFi.softAPIP();
@@ -59,6 +60,26 @@ static String dashboard_url() {
 static void redirect_to_dashboard() {
     server.sendHeader("Location", dashboard_url(), true);
     server.send(302, "text/plain", "");
+}
+
+static void increase_wifi_scan_transmission_power() {
+    WiFi.setTxPower(config.wifi_connected_transmission_power);
+    wifi_scan_transmission_power_increased = true;
+}
+
+static void restore_wifi_scan_transmission_power() {
+    if (!wifi_scan_transmission_power_increased) {
+        return;
+    }
+
+    wifi_scan_transmission_power_increased = false;
+    if (WiFi.status() == WL_CONNECTED) {
+        WiFi.mode(WIFI_AP_STA);
+        WiFi.setTxPower(config.wifi_connected_transmission_power);
+    } else {
+        WiFi.mode(WIFI_AP);
+        WiFi.setTxPower(config.wifi_idle_transmission_power);
+    }
 }
 
 static void handle_not_found() {
@@ -187,6 +208,7 @@ static void handle_wifi_wifi_scan(JsonDocument& request) {
 
     if (!wifi_scan_running) {
         WiFi.mode(WIFI_AP_STA);
+        increase_wifi_scan_transmission_power();
 
         int16_t scan_status = WiFi.scanNetworks(true);
         if (scan_status == WIFI_SCAN_RUNNING) {
@@ -204,6 +226,7 @@ static void handle_wifi_wifi_scan(JsonDocument& request) {
     if (n < 0) {
         WiFi.scanDelete();
         wifi_scan_running = false;
+        restore_wifi_scan_transmission_power();
         server.send(500);
         return;
     }
@@ -219,6 +242,7 @@ static void handle_wifi_wifi_scan(JsonDocument& request) {
 
     WiFi.scanDelete();
     wifi_scan_running = false;
+    restore_wifi_scan_transmission_power();
 
     send_json(200, response);
 }
@@ -414,6 +438,10 @@ void webserver_setup() {
 }
 
 void webserver_update() {
+    if (wifi_scan_running && WiFi.scanComplete() != WIFI_SCAN_RUNNING) {
+        restore_wifi_scan_transmission_power();
+    }
+
     dns_server.processNextRequest();
     server.handleClient();
 }
