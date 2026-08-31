@@ -120,7 +120,7 @@
             if (migrationCode === undefined) continue;
 
             terminal?.writeLine(
-                `Applying config migration for ${availableReleases[i].name}`,
+                `Applying config migration for ${availableReleases[i].name}...`,
             );
 
             const migrationFunction = new Function("config", migrationCode) as (
