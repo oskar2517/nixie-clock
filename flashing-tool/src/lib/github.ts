@@ -1,6 +1,7 @@
 export interface FirmwareRelease {
     name: string;
     changes: string[];
+    migration?: string;
     assets: {
         dashboard: string;
         firmware: {
@@ -36,4 +37,16 @@ export async function downloadFirmware(path: string): Promise<Uint8Array<ArrayBu
     }
 
     return new Uint8Array(await response.arrayBuffer());
+}
+
+export async function fetchMigration(release: FirmwareRelease): Promise<string | undefined> {
+    if (release.migration === undefined) return undefined;
+
+    const response = await fetch(rawUrl(release.migration));
+
+    if (!response.ok) {
+        throw new Error(`Failed to fetch migration for release ${release.name} (${response.status})`);
+    }
+
+    return await response.text();
 }

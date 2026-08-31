@@ -19,6 +19,7 @@
     import E from "./lib/components/E.svelte";
     import {
         downloadFirmware,
+        fetchMigration,
         fetchReleases,
         type FirmwareRelease,
     } from "./lib/github";
@@ -62,6 +63,73 @@
     let finished = $state(false);
     let wifiApPassword = $state("");
     let clockConfig: ClockConfig | undefined = $state(undefined);
+
+    async function applyMigrations() {
+        if (
+            clockConfig === undefined ||
+            clockInfo === undefined ||
+            availableReleases.length === 0 ||
+            selectedRelease === ""
+        ) {
+            return;
+        }
+
+        const installedFirmwareVersion = clockInfo.installedFirmwareVersion;
+
+        if (installedFirmwareVersion === "unknown") {
+            terminal?.writeLine(
+                "Cannot apply config migrations for unknown firmware version.",
+            );
+            return;
+        }
+
+        const installedReleaseIndex = availableReleases.findIndex(
+            (r) => r.name === installedFirmwareVersion,
+        );
+        if (installedReleaseIndex === -1) {
+            terminal?.writeLine(
+                "Installed firmware version not found in releases.",
+            );
+            return;
+        }
+
+        const selectedReleaseIndex = availableReleases.findIndex(
+            (r) => r.name === selectedRelease,
+        );
+        if (selectedReleaseIndex === -1) {
+            terminal?.writeLine(
+                "Selected firmware version not found in releases.",
+            );
+            return;
+        }
+
+        if (installedReleaseIndex <= selectedReleaseIndex) {
+            terminal?.writeLine(
+                "Firmware version downgrade or reinstallation of same version detected. Skipping migrations.",
+            );
+            return;
+        }
+
+        for (
+            let i = installedReleaseIndex - 1;
+            i >= selectedReleaseIndex;
+            i--
+        ) {
+            const migrationCode = await fetchMigration(availableReleases[i]);
+
+            if (migrationCode === undefined) continue;
+
+            terminal?.writeLine(
+                `Applying config migration for ${availableReleases[i].name}`,
+            );
+
+            const migrationFunction = new Function("config", migrationCode) as (
+                config: ClockConfig,
+            ) => void;
+
+            migrationFunction(clockConfig);
+        }
+    }
 
     async function beginUpdate() {
         terminal = {
@@ -218,6 +286,8 @@
             terminal.writeLine("Patching little-fs...");
             terminal.writeLine("Patching config...");
             clockConfig.wifiApPassword = wifiApPassword;
+            terminal.writeLine("Migrating config...");
+            await applyMigrations();
             await lfs.writeFile(
                 "/config.json",
                 new TextEncoder().encode(JSON.stringify(clockConfig)),
@@ -282,6 +352,7 @@
             finished = true;
         } catch (err: any) {
             error = err.toString();
+            readyToInstall = false;
         }
     }
 </script>
