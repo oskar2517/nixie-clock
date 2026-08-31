@@ -1,9 +1,9 @@
 #include "config.h"
 
-#include <ctype.h>
-
 #include <ArduinoJson.h>
 #include <LittleFS.h>
+#include <WiFi.h>
+#include <ctype.h>
 
 #include "acp.h"
 #include "clock.h"
@@ -21,29 +21,31 @@
 #define NEONS_FREQUENCY_MIN_HZ 1
 #define NEONS_FREQUENCY_MAX_HZ 40000
 
-#define CONFIG_SECRET_FIELDS(FIELD)           \
-    FIELD(wifi_ssid, "wifiSsid")              \
-    FIELD(wifi_password, "wifiPassword")      \
+#define CONFIG_SECRET_FIELDS(FIELD)      \
+    FIELD(wifi_ssid, "wifiSsid")         \
+    FIELD(wifi_password, "wifiPassword") \
     FIELD(wifi_ap_password, "wifiApPassword")
 
-#define CONFIG_PUBLIC_FIELDS(FIELD)                   \
-    FIELD(timezone_posix, "timezonePosix")            \
-    FIELD(timezone_iana, "timezoneIana")              \
-    FIELD(time_display_format, "timeDisplayFormat")   \
-    FIELD(automatic_time, "automaticTime")            \
-    FIELD(timer, "timer")                             \
-    FIELD(timer_tubes_off_hours, "tubesOffHours")     \
-    FIELD(timer_tubes_off_minutes, "tubesOffMinutes") \
-    FIELD(timer_tubes_on_hours, "tubesOnHours")       \
-    FIELD(timer_tubes_on_minutes, "tubesOnMinutes")   \
-    FIELD(ntp_server, "ntpServer")                    \
-    FIELD(ntp_frequency, "ntpFrequency")              \
-    FIELD(healing_mode, "healingMode")                \
-    FIELD(neons_mode, "neonsMode")                    \
-    FIELD(acp_routine, "acpRoutine")                  \
-    FIELD(neons_frequency, "neonsFrequency")          \
-    FIELD(neons_brightness, "neonsBrightness")        \
-    FIELD(digit_cross_fade, "digitCrossFade")
+#define CONFIG_PUBLIC_FIELDS(FIELD)                          \
+    FIELD(timezone_posix, "timezonePosix")                   \
+    FIELD(timezone_iana, "timezoneIana")                     \
+    FIELD(time_display_format, "timeDisplayFormat")          \
+    FIELD(automatic_time, "automaticTime")                   \
+    FIELD(timer, "timer")                                    \
+    FIELD(timer_tubes_off_hours, "tubesOffHours")            \
+    FIELD(timer_tubes_off_minutes, "tubesOffMinutes")        \
+    FIELD(timer_tubes_on_hours, "tubesOnHours")              \
+    FIELD(timer_tubes_on_minutes, "tubesOnMinutes")          \
+    FIELD(ntp_server, "ntpServer")                           \
+    FIELD(ntp_frequency, "ntpFrequency")                     \
+    FIELD(healing_mode, "healingMode")                       \
+    FIELD(neons_mode, "neonsMode")                           \
+    FIELD(acp_routine, "acpRoutine")                         \
+    FIELD(neons_frequency, "neonsFrequency")                 \
+    FIELD(neons_brightness, "neonsBrightness")               \
+    FIELD(digit_cross_fade, "digitCrossFade")                \
+    FIELD(wifi_idle_transmission_power, "wifiIdleTransmissionPower") \
+    FIELD(wifi_connected_transmission_power, "wifiConnectedTransmissionPower")
 
 #define COPY2DOC(conf_name, doc_name) document[doc_name] = source.conf_name;
 
@@ -74,6 +76,8 @@ static ClockConfig default_config() {
     next.neons_brightness = 70;
     next.digit_cross_fade = false;
     next.wifi_ap_password = "";
+    next.wifi_connected_transmission_power = WIFI_POWER_19_5dBm;
+    next.wifi_idle_transmission_power = WIFI_POWER_2dBm;
 
     return next;
 }
@@ -122,7 +126,8 @@ bool config_apply_json(ClockConfig& target, JsonDocument& document,
     if (include_secrets) {
         if (!copy_json_field(document, "wifiSsid", target.wifi_ssid) ||
             !copy_json_field(document, "wifiPassword", target.wifi_password) ||
-            !copy_json_field(document, "wifiApPassword", target.wifi_ap_password)) {
+            !copy_json_field(document, "wifiApPassword",
+                             target.wifi_ap_password)) {
             return false;
         }
     }
@@ -151,7 +156,11 @@ bool config_apply_json(ClockConfig& target, JsonDocument& document,
            copy_json_field(document, "neonsBrightness",
                            target.neons_brightness) &&
            copy_json_field(document, "digitCrossFade",
-                           target.digit_cross_fade);
+                           target.digit_cross_fade) &&
+           copy_json_field(document, "wifiIdleTransmissionPower",
+                           target.wifi_idle_transmission_power) &&
+           copy_json_field(document, "wifiConnectedTransmissionPower",
+                           target.wifi_connected_transmission_power);
 }
 
 bool config_save() {
@@ -279,10 +288,19 @@ static bool host_field_is_valid(const String& value) {
     return true;
 }
 
+static bool wifi_transmission_power_is_valid(wifi_power_t power) {
+    return power == WIFI_POWER_19_5dBm || power == WIFI_POWER_19dBm ||
+           power == WIFI_POWER_18_5dBm || power == WIFI_POWER_17dBm ||
+           power == WIFI_POWER_15dBm || power == WIFI_POWER_13dBm ||
+           power == WIFI_POWER_11dBm || power == WIFI_POWER_8_5dBm ||
+           power == WIFI_POWER_7dBm || power == WIFI_POWER_5dBm ||
+           power == WIFI_POWER_2dBm || power == WIFI_POWER_MINUS_1dBm;
+}
+
 bool config_validate(const ClockConfig& candidate) {
     if (!text_field_is_valid(candidate.wifi_ssid, WIFI_SSID_MAX_LENGTH, true) ||
-        !text_field_is_valid(candidate.wifi_password,
-                             WIFI_PASSWORD_MAX_LENGTH, true) ||
+        !text_field_is_valid(candidate.wifi_password, WIFI_PASSWORD_MAX_LENGTH,
+                             true) ||
         !text_field_is_valid(candidate.wifi_ap_password,
                              WIFI_PASSWORD_MAX_LENGTH, true) ||
         !text_field_is_valid(candidate.timezone_posix,
@@ -295,6 +313,15 @@ bool config_validate(const ClockConfig& candidate) {
 
     if (candidate.wifi_ap_password.length() > 0 &&
         candidate.wifi_ap_password.length() < 8) {
+        return false;
+    }
+
+    if (!wifi_transmission_power_is_valid(candidate.wifi_idle_transmission_power)) {
+        return false;
+    }
+
+    if (!wifi_transmission_power_is_valid(
+            candidate.wifi_connected_transmission_power)) {
         return false;
     }
 
@@ -344,6 +371,14 @@ bool config_apply_side_effects(const ClockConfig& next) {
         next.neons_brightness != config.neons_brightness) {
         clock_apply_neon_pwm_config(next.neons_frequency,
                                     next.neons_brightness);
+    }
+
+    bool wifi_transmission_power_changed =
+        next.wifi_idle_transmission_power != config.wifi_idle_transmission_power ||
+        next.wifi_connected_transmission_power !=
+            config.wifi_connected_transmission_power;
+    if (wifi_transmission_power_changed && WiFi.status() != WL_CONNECTED) {
+        WiFi.setTxPower(next.wifi_idle_transmission_power);
     }
 
     return true;

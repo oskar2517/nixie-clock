@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
+#include <WiFi.h>
 
 #define CFG_NEONS_MODE_DISABLED 0
 #define CFG_NEONS_MODE_BLINK 1
@@ -10,6 +11,9 @@
 struct ClockConfig {
     String wifi_ssid;
     String wifi_password;
+    String wifi_ap_password;
+    wifi_power_t wifi_idle_transmission_power;
+    wifi_power_t wifi_connected_transmission_power;
     String timezone_posix;
     String timezone_iana;
     uint8_t time_display_format;
@@ -27,7 +31,6 @@ struct ClockConfig {
     uint16_t neons_brightness;
     int8_t acp_routine;
     bool digit_cross_fade;
-    String wifi_ap_password;
 };
 
 extern ClockConfig config;

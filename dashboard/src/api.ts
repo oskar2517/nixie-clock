@@ -27,6 +27,8 @@ export interface ClockConfig {
     neonsFrequency: number;
     neonsBrightness: number;
     digitCrossFade: boolean;
+    wifiIdleTransmissionPower: number;
+    wifiConnectedTransmissionPower: number;
 }
 
 export type ClockConfigUpdate = Partial<ClockConfig>;
