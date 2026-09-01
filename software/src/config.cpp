@@ -70,7 +70,7 @@ static ClockConfig default_config() {
     next.ntp_server = "pool.ntp.org";
     next.ntp_frequency = 60;
     next.healing_mode = false;
-    next.neons_mode = NeonsMode::BLINK;
+    next.neons_mode = NeonsMode::TOGGLE;
     next.acp_routine = 1;
     next.neons_frequency = 1000;
     next.neons_brightness = 60;
