@@ -73,7 +73,7 @@ static ClockConfig default_config() {
     next.neons_mode = CFG_NEONS_MODE_BLINK;
     next.acp_routine = 1;
     next.neons_frequency = 1000;
-    next.neons_brightness = 70;
+    next.neons_brightness = 60;
     next.digit_cross_fade = false;
     next.wifi_ap_password = "";
     next.wifi_connected_transmission_power = WIFI_POWER_19_5dBm;
