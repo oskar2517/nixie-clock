@@ -176,6 +176,26 @@ void clock_set_display(uint32_t value) {
     clock_set_display_digits(digits);
 }
 
+static uint32_t neon_duty_from_percent(uint16_t percent) {
+    if (percent > 100) {
+        percent = 100;
+    }
+
+    return (NEON_PWM_MAX_DUTY * percent) / 100;
+}
+
+static void write_neon_duty(bool enabled, uint16_t brightness) {
+    uint32_t duty = enabled ? neon_duty_from_percent(brightness) : 0;
+
+    ledcWrite(NEON_PWM_CHANNEL_1, duty);
+    ledcWrite(NEON_PWM_CHANNEL_2, duty);
+}
+
+static void set_neons_enabled(bool enabled) {
+    neons_enabled = enabled;
+    write_neon_duty(enabled, config.neons_brightness);
+}
+
 void clock_stop_acp_routine() {
     acp_routine_running = false;
 
@@ -189,6 +209,7 @@ void clock_stop_acp_routine() {
 void clock_start_acp_routine() {
     cancel_digit_cross_fade();
     acp_routine_running = true;
+    set_neons_enabled(false);
 }
 
 static void IRAM_ATTR scan_isr() {
@@ -339,28 +360,10 @@ bool clock_get_current_time_digits(uint8_t* digits) {
     return true;
 }
 
-static uint32_t neon_duty_from_percent(uint16_t percent) {
-    if (percent > 100) {
-        percent = 100;
-    }
-
-    return (NEON_PWM_MAX_DUTY * percent) / 100;
-}
-
-static void write_neon_duty(bool enabled, uint16_t brightness) {
-    uint32_t duty = enabled ? neon_duty_from_percent(brightness) : 0;
-
-    ledcWrite(NEON_PWM_CHANNEL_1, duty);
-    ledcWrite(NEON_PWM_CHANNEL_2, duty);
-}
-
-static void set_neons_enabled(bool enabled) {
-    neons_enabled = enabled;
-    write_neon_duty(enabled, config.neons_brightness);
-}
-
 static bool neons_should_be_enabled(const DateTime& now,
                                     uint32_t second_started_ms) {
+    if (acp_routine_running) return false;
+
     uint32_t elapsed_ms = millis() - second_started_ms;
 
     switch (config.neons_mode) {
@@ -412,8 +415,6 @@ void clock_update() {
     if (acp_routine_running) return;
 
     if (config.healing_mode) {
-        // Only use basic acp mode for healing
-        set_neons_enabled(false);
         clock_start_acp_routine();
         return;
     }
