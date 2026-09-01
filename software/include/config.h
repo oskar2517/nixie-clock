@@ -5,9 +5,9 @@
 #include <WiFi.h>
 
 enum NeonsMode : uint8_t {
-    OFF,
-    BLINK,
-    TOGGLE,
+    NEONS_DISABLED,
+    NEONS_BLINK,
+    NEONS_TOGGLE,
 };
 
 struct ClockConfig {

@@ -70,7 +70,7 @@ static ClockConfig default_config() {
     next.ntp_server = "pool.ntp.org";
     next.ntp_frequency = 60;
     next.healing_mode = false;
-    next.neons_mode = NeonsMode::TOGGLE;
+    next.neons_mode = NeonsMode::NEONS_TOGGLE;
     next.acp_routine = 1;
     next.neons_frequency = 1000;
     next.neons_brightness = 60;
@@ -342,7 +342,7 @@ bool config_validate(const ClockConfig& candidate) {
         return false;
     }
 
-    if (candidate.neons_mode > NeonsMode::TOGGLE) {
+    if (candidate.neons_mode > NeonsMode::NEONS_TOGGLE) {
         return false;
     }
 
