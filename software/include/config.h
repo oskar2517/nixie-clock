@@ -4,9 +4,11 @@
 #include <ArduinoJson.h>
 #include <WiFi.h>
 
-#define CFG_NEONS_MODE_DISABLED 0
-#define CFG_NEONS_MODE_BLINK 1
-#define CFG_NEONS_MODE_TOGGLE 2
+enum NeonsMode : uint8_t {
+    OFF,
+    BLINK,
+    TOGGLE,
+};
 
 struct ClockConfig {
     String wifi_ssid;
@@ -26,7 +28,7 @@ struct ClockConfig {
     String ntp_server;
     uint16_t ntp_frequency;
     bool healing_mode;
-    uint8_t neons_mode;
+    NeonsMode neons_mode;
     uint32_t neons_frequency;
     uint16_t neons_brightness;
     int8_t acp_routine;

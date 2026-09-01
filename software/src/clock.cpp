@@ -367,13 +367,13 @@ static bool neons_should_be_enabled(const DateTime& now,
     uint32_t elapsed_ms = millis() - second_started_ms;
 
     switch (config.neons_mode) {
-        case CFG_NEONS_MODE_BLINK:
+        case NeonsMode::BLINK:
             return elapsed_ms < NEON_HALF_PERIOD_MS;
 
-        case CFG_NEONS_MODE_TOGGLE:
+        case NeonsMode::TOGGLE:
             return now.second() % 2 == 0;
 
-        case CFG_NEONS_MODE_DISABLED:
+        case NeonsMode::OFF:
         default:
             return false;
     }
