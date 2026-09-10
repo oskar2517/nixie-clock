@@ -362,7 +362,7 @@ bool clock_get_current_time_digits(uint8_t* digits) {
 
 static bool neons_should_be_enabled(const DateTime& now,
                                     uint32_t second_started_ms) {
-    if (acp_routine_running) return false;
+    if (config.healing_mode) return false;
 
     uint32_t elapsed_ms = millis() - second_started_ms;
 
@@ -398,6 +398,8 @@ static void setup_neon_pwm() {
 }
 
 void clock_update() {
+    bool acp_routine_just_stopped = false;
+
     if (acp_routine_running) {
         int8_t routine =
             config.healing_mode ? ACP_ROUTINE_BASIC : config.acp_routine;
@@ -410,11 +412,13 @@ void clock_update() {
         }
 
         acp_routines[routine].run();
+
+        if (!acp_routine_running) {
+            acp_routine_just_stopped = true;
+        }
     }
 
-    if (acp_routine_running) return;
-
-    if (config.healing_mode) {
+    if (config.healing_mode && !acp_routine_running) {
         clock_start_acp_routine();
         return;
     }
@@ -427,7 +431,8 @@ void clock_update() {
 
     update_digit_cross_fade(now_ms);
 
-    if (rtc_is_available() && now_ms - last_read_ms >= RTC_READ_INTERVAL_MS) {
+    if (rtc_is_available() && (now_ms - last_read_ms >= RTC_READ_INTERVAL_MS ||
+                               acp_routine_just_stopped)) {
         last_read_ms = now_ms;
 
         DateTime now = rtc.now();
@@ -435,10 +440,17 @@ void clock_update() {
 
         set_hv_enabled(!tubes_should_sleep(now));
 
-        if (now_s != last_second) {
+        bool second_changed = now_s != last_second;
+
+        if (second_changed) {
             last_second = now_s;
             second_started_ms = now_ms;
-            clock_set_display(time_display_value(now));
+        }
+
+        if (second_changed || acp_routine_just_stopped) {
+            if (!acp_routine_running) {
+                clock_set_display(time_display_value(now));
+            }
         }
 
         if (now_s == 0) {
@@ -449,7 +461,8 @@ void clock_update() {
     }
 
     if (rtc_is_available() && config.automatic_time &&
-        now_ms - last_ntp_update >= 60000UL * config.ntp_frequency) {
+        now_ms - last_ntp_update >= 60000UL * config.ntp_frequency &&
+        !acp_routine_running) {
         Serial.println("Setting time automatically...");
         last_ntp_update = now_ms;
 
